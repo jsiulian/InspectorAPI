@@ -21,8 +21,4 @@
     <ProjectReference Include="..\InspectorAPI.Core\InspectorAPI.Core.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <AvaloniaResource Include="**\*.axaml" Exclude="**\obj\**" />
-  </ItemGroup>
-
 </Project>

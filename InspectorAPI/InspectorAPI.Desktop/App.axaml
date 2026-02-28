@@ -1,0 +1,29 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="InspectorAPI.Desktop.App"
+             RequestedThemeVariant="Dark">
+
+  <Application.Styles>
+    <FluentTheme />
+  </Application.Styles>
+
+  <Application.Resources>
+    <ResourceDictionary>
+      <!-- Method badge colors -->
+      <SolidColorBrush x:Key="GetMethodBrush" Color="#61AFFE" />
+      <SolidColorBrush x:Key="PostMethodBrush" Color="#49CC90" />
+      <SolidColorBrush x:Key="PutMethodBrush" Color="#FCA130" />
+      <SolidColorBrush x:Key="DeleteMethodBrush" Color="#F93E3E" />
+      <SolidColorBrush x:Key="PatchMethodBrush" Color="#50E3C2" />
+      <SolidColorBrush x:Key="HeadMethodBrush" Color="#9012FE" />
+      <SolidColorBrush x:Key="OptionsMethodBrush" Color="#0D5AA7" />
+
+      <SolidColorBrush x:Key="SidebarBackground" Color="#1E1E2E" />
+      <SolidColorBrush x:Key="ContentBackground" Color="#252535" />
+      <SolidColorBrush x:Key="ToolbarBackground" Color="#1A1A2A" />
+      <SolidColorBrush x:Key="BorderBrush" Color="#3A3A5A" />
+      <SolidColorBrush x:Key="AccentBrush" Color="#7C6AF7" />
+    </ResourceDictionary>
+  </Application.Resources>
+
+</Application>

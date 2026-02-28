@@ -1,0 +1,664 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:InspectorAPI.Core.ViewModels"
+        xmlns:conv="using:InspectorAPI.Desktop.Converters"
+        x:Class="InspectorAPI.Desktop.Views.MainWindow"
+        x:DataType="vm:MainViewModel"
+        Title="InspectorAPI"
+        Width="1280" Height="800"
+        MinWidth="900" MinHeight="600"
+        Background="#1A1A2A">
+
+  <Window.Styles>
+
+    <!-- Sidebar button style -->
+    <Style Selector="Button.sidebar-btn">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="6,3" />
+      <Setter Property="Foreground" Value="#AAAACC" />
+    </Style>
+    <Style Selector="Button.sidebar-btn:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#2A2A4A" />
+    </Style>
+
+    <!-- Tab button -->
+    <Style Selector="Button.tab-btn">
+      <Setter Property="Background" Value="#252535" />
+      <Setter Property="BorderThickness" Value="0,0,1,0" />
+      <Setter Property="BorderBrush" Value="#3A3A5A" />
+      <Setter Property="Padding" Value="12,8" />
+      <Setter Property="Foreground" Value="#CCCCDD" />
+      <Setter Property="CornerRadius" Value="0" />
+    </Style>
+    <Style Selector="Button.tab-btn.active">
+      <Setter Property="Background" Value="#1A1A2A" />
+      <Setter Property="BorderBrush" Value="#3A3A5A" />
+    </Style>
+    <Style Selector="Button.tab-btn:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#2A2A3A" />
+    </Style>
+
+    <!-- Close tab button -->
+    <Style Selector="Button.close-btn">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="2,0" />
+      <Setter Property="Foreground" Value="#888899" />
+      <Setter Property="FontSize" Value="14" />
+      <Setter Property="Width" Value="20" />
+      <Setter Property="Height" Value="20" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Button.close-btn:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#CC3333" />
+    </Style>
+
+    <!-- Send button -->
+    <Style Selector="Button.send-btn">
+      <Setter Property="Background" Value="#7C6AF7" />
+      <Setter Property="Foreground" Value="White" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="16,8" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="CornerRadius" Value="4" />
+    </Style>
+    <Style Selector="Button.send-btn:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#9080FF" />
+    </Style>
+    <Style Selector="Button.send-btn:disabled /template/ ContentPresenter">
+      <Setter Property="Background" Value="#444466" />
+    </Style>
+
+    <!-- New tab button -->
+    <Style Selector="Button.new-tab-btn">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="8,6" />
+      <Setter Property="Foreground" Value="#AAAACC" />
+      <Setter Property="FontSize" Value="18" />
+    </Style>
+
+    <!-- Add row button -->
+    <Style Selector="Button.add-row-btn">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="BorderBrush" Value="#3A3A5A" />
+      <Setter Property="Padding" Value="10,5" />
+      <Setter Property="Foreground" Value="#AAAACC" />
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="CornerRadius" Value="3" />
+      <Setter Property="Margin" Value="8,4" />
+    </Style>
+
+    <!-- Remove row button -->
+    <Style Selector="Button.remove-row-btn">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="4,2" />
+      <Setter Property="Foreground" Value="#666677" />
+      <Setter Property="FontSize" Value="16" />
+    </Style>
+    <Style Selector="Button.remove-row-btn:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#AA2222" />
+      <Setter Property="TextElement.Foreground" Value="White" />
+    </Style>
+
+    <!-- TextBox base -->
+    <Style Selector="TextBox">
+      <Setter Property="Background" Value="#2A2A3A" />
+      <Setter Property="Foreground" Value="#DDDDEE" />
+      <Setter Property="BorderBrush" Value="#3A3A5A" />
+      <Setter Property="CaretBrush" Value="#7C6AF7" />
+      <Setter Property="SelectionBrush" Value="#4A4A8A" />
+    </Style>
+
+    <!-- ComboBox base -->
+    <Style Selector="ComboBox">
+      <Setter Property="Background" Value="#2A2A3A" />
+      <Setter Property="Foreground" Value="#DDDDEE" />
+      <Setter Property="BorderBrush" Value="#3A3A5A" />
+    </Style>
+
+    <!-- TabItem -->
+    <Style Selector="TabItem">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Foreground" Value="#AAAACC" />
+      <Setter Property="FontSize" Value="12" />
+    </Style>
+    <Style Selector="TabItem:selected">
+      <Setter Property="Foreground" Value="#DDDDEE" />
+    </Style>
+
+    <!-- Tree item -->
+    <Style Selector="TreeViewItem">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Foreground" Value="#CCCCDD" />
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="Padding" Value="2" />
+    </Style>
+
+    <!-- Method badge colors via classes -->
+    <Style Selector="TextBlock.method-GET">
+      <Setter Property="Foreground" Value="#61AFFE" />
+    </Style>
+    <Style Selector="TextBlock.method-POST">
+      <Setter Property="Foreground" Value="#49CC90" />
+    </Style>
+    <Style Selector="TextBlock.method-PUT">
+      <Setter Property="Foreground" Value="#FCA130" />
+    </Style>
+    <Style Selector="TextBlock.method-DELETE">
+      <Setter Property="Foreground" Value="#F93E3E" />
+    </Style>
+    <Style Selector="TextBlock.method-PATCH">
+      <Setter Property="Foreground" Value="#50E3C2" />
+    </Style>
+    <Style Selector="TextBlock.method-HEAD">
+      <Setter Property="Foreground" Value="#9012FE" />
+    </Style>
+    <Style Selector="TextBlock.method-OPTIONS">
+      <Setter Property="Foreground" Value="#0D5AA7" />
+    </Style>
+  </Window.Styles>
+
+  <Grid ColumnDefinitions="280,4,*">
+
+    <!-- ===== COLLECTIONS SIDEBAR ===== -->
+    <DockPanel Grid.Column="0" Background="#1E1E2E">
+
+      <!-- Sidebar header -->
+      <Border DockPanel.Dock="Top" Background="#161626"
+              BorderThickness="0,0,0,1" BorderBrush="#3A3A5A"
+              Padding="12,8">
+        <Grid ColumnDefinitions="*,Auto,Auto">
+          <TextBlock Grid.Column="0"
+                     Text="COLLECTIONS"
+                     FontSize="10" FontWeight="Bold"
+                     Foreground="#7777AA"
+                     VerticalAlignment="Center"
+                     LetterSpacing="1" />
+          <Button Grid.Column="1"
+                  Classes="sidebar-btn"
+                  Command="{Binding NewCollectionCommand}"
+                  ToolTip.Tip="New Collection"
+                  FontSize="18" Padding="4,0">+</Button>
+        </Grid>
+      </Border>
+
+      <!-- Collections tree -->
+      <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <TreeView ItemsSource="{Binding CollectionTree}"
+                  Background="Transparent">
+          <TreeView.ItemTemplate>
+            <TreeDataTemplate x:DataType="vm:CollectionTreeNodeViewModel"
+                              ItemsSource="{Binding Children}">
+              <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,1">
+
+                <!-- Icon / method badge -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="4">
+                  <TextBlock Text="{Binding Icon}"
+                             FontSize="11"
+                             Foreground="#7777AA"
+                             IsVisible="{Binding IsNotRequest}" />
+                  <TextBlock Text="{Binding MethodBadge}"
+                             FontSize="9" FontWeight="Bold"
+                             Foreground="#61AFFE"
+                             IsVisible="{Binding IsRequest}"
+                             VerticalAlignment="Center" />
+                </StackPanel>
+
+                <!-- Node name -->
+                <TextBlock Grid.Column="1"
+                           Text="{Binding Name}"
+                           VerticalAlignment="Center"
+                           Margin="4,0"
+                           TextTrimming="CharacterEllipsis" />
+
+                <!-- Hover action buttons — all bound to node's own commands -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="2"
+                            IsVisible="{Binding $parent[TreeViewItem].IsPointerOver}">
+                  <!-- Open request -->
+                  <Button Classes="sidebar-btn"
+                          Command="{Binding OpenCommand}"
+                          IsVisible="{Binding IsRequest}"
+                          ToolTip.Tip="Open in tab" FontSize="10">→</Button>
+                  <!-- New folder -->
+                  <Button Classes="sidebar-btn"
+                          Command="{Binding NewFolderCommand}"
+                          IsVisible="{Binding IsCollectionOrFolder}"
+                          ToolTip.Tip="New folder" FontSize="10">📁</Button>
+                  <!-- Delete -->
+                  <Button Classes="sidebar-btn"
+                          Command="{Binding DeleteCommand}"
+                          ToolTip.Tip="Delete" FontSize="10">🗑</Button>
+                </StackPanel>
+              </Grid>
+            </TreeDataTemplate>
+          </TreeView.ItemTemplate>
+        </TreeView>
+      </ScrollViewer>
+    </DockPanel>
+
+    <!-- Vertical splitter -->
+    <GridSplitter Grid.Column="1"
+                  Background="#3A3A5A"
+                  ResizeDirection="Columns" />
+
+    <!-- ===== MAIN CONTENT ===== -->
+    <Grid Grid.Column="2" RowDefinitions="Auto,*" Background="#1A1A2A">
+
+      <!-- Tab bar row -->
+      <DockPanel Grid.Row="0" Background="#252535"
+                 LastChildFill="True">
+
+        <!-- New tab button -->
+        <Button DockPanel.Dock="Right"
+                Classes="new-tab-btn"
+                Command="{Binding AddNewTabCommand}"
+                ToolTip.Tip="New Request"
+                VerticalAlignment="Center">+</Button>
+
+        <!-- Tab strip -->
+        <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                      VerticalScrollBarVisibility="Disabled">
+          <ItemsControl ItemsSource="{Binding Tabs}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <StackPanel Orientation="Horizontal" />
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:RequestTabViewModel">
+                <Border BorderThickness="0,0,1,0" BorderBrush="#3A3A5A">
+                  <Button Classes="tab-btn"
+                          Command="{Binding ActivateCommand}">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <TextBlock Text="{Binding SelectedMethod}"
+                                 FontSize="10" FontWeight="Bold"
+                                 VerticalAlignment="Center"
+                                 Foreground="#61AFFE" />
+                      <TextBlock Text="{Binding TabTitle}"
+                                 MaxWidth="140"
+                                 TextTrimming="CharacterEllipsis"
+                                 VerticalAlignment="Center" />
+                      <Button Classes="close-btn"
+                              Command="{Binding CloseCommand}"
+                              VerticalAlignment="Center">×</Button>
+                    </StackPanel>
+                  </Button>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </ScrollViewer>
+      </DockPanel>
+
+      <!-- Tab content area -->
+      <ContentControl Grid.Row="1" Content="{Binding SelectedTab}">
+        <ContentControl.DataTemplates>
+          <DataTemplate x:DataType="vm:RequestTabViewModel">
+
+            <Grid RowDefinitions="Auto,*,5,300">
+
+              <!-- ===== REQUEST BAR ===== -->
+              <Border Grid.Row="0" Padding="10,8"
+                      Background="#1E1E2E"
+                      BorderThickness="0,0,0,1" BorderBrush="#3A3A5A">
+                <Grid ColumnDefinitions="150,*,Auto,Auto,Auto">
+
+                  <!-- Method selector -->
+                  <ComboBox Grid.Column="0"
+                            ItemsSource="{x:Static vm:RequestTabViewModel.HttpMethods}"
+                            SelectedItem="{Binding SelectedMethod}"
+                            Padding="8,6"
+                            FontWeight="Bold"
+                            FontSize="13" />
+
+                  <!-- URL input -->
+                  <TextBox Grid.Column="1"
+                           Text="{Binding Url}"
+                           Watermark="https://api.example.com/endpoint"
+                           Margin="6,0"
+                           FontFamily="Consolas,Courier New,monospace"
+                           FontSize="13"
+                           Padding="10,6" />
+
+                  <!-- Send button -->
+                  <Button Grid.Column="2"
+                          Classes="send-btn"
+                          Command="{Binding SendRequestCommand}"
+                          IsVisible="{Binding !IsSending}">Send</Button>
+
+                  <!-- Cancel button -->
+                  <Button Grid.Column="2"
+                          Background="#AA3333"
+                          Foreground="White"
+                          BorderThickness="0"
+                          Padding="12,8"
+                          CornerRadius="4"
+                          Command="{Binding CancelRequestCommand}"
+                          IsVisible="{Binding IsSending}">Cancel</Button>
+
+                  <!-- Save button -->
+                  <Button Grid.Column="3"
+                          Background="#2A2A4A"
+                          Foreground="#CCCCDD"
+                          BorderThickness="1"
+                          BorderBrush="#4A4A7A"
+                          Padding="12,8"
+                          CornerRadius="4"
+                          Margin="6,0,0,0"
+                          Command="{Binding OpenSaveDialogCommand}">Save</Button>
+
+                </Grid>
+              </Border>
+
+              <!-- ===== REQUEST CONFIGURATION TABS ===== -->
+              <TabControl Grid.Row="1" Background="#1A1A2A">
+
+                <!-- Headers tab -->
+                <TabItem Header="Headers">
+                  <Grid RowDefinitions="*,Auto" Background="#1A1A2A">
+                    <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto">
+                      <ItemsControl ItemsSource="{Binding Headers}" Margin="8,4">
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate x:DataType="vm:HeaderItemViewModel">
+                            <Grid ColumnDefinitions="Auto,*,*,Auto" Margin="0,2">
+                              <CheckBox Grid.Column="0"
+                                        IsChecked="{Binding IsEnabled}"
+                                        VerticalAlignment="Center"
+                                        Margin="0,0,6,0" />
+                              <TextBox Grid.Column="1"
+                                       Text="{Binding Key}"
+                                       Watermark="Header name"
+                                       FontFamily="Consolas,monospace"
+                                       FontSize="12"
+                                       Padding="6,4"
+                                       Margin="0,0,4,0" />
+                              <TextBox Grid.Column="2"
+                                       Text="{Binding Value}"
+                                       Watermark="Value"
+                                       FontFamily="Consolas,monospace"
+                                       FontSize="12"
+                                       Padding="6,4" />
+                              <Button Grid.Column="3"
+                                      Classes="remove-row-btn"
+                                      Command="{Binding RemoveCommand}"
+                                      Margin="4,0,0,0">×</Button>
+                            </Grid>
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                    </ScrollViewer>
+                    <Button Grid.Row="1"
+                            Classes="add-row-btn"
+                            Command="{Binding AddHeaderCommand}">+ Add Header</Button>
+                  </Grid>
+                </TabItem>
+
+                <!-- Query Params tab -->
+                <TabItem Header="Query Params">
+                  <Grid RowDefinitions="*,Auto" Background="#1A1A2A">
+                    <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto">
+                      <ItemsControl ItemsSource="{Binding QueryParams}" Margin="8,4">
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate x:DataType="vm:HeaderItemViewModel">
+                            <Grid ColumnDefinitions="Auto,*,*,Auto" Margin="0,2">
+                              <CheckBox Grid.Column="0"
+                                        IsChecked="{Binding IsEnabled}"
+                                        VerticalAlignment="Center"
+                                        Margin="0,0,6,0" />
+                              <TextBox Grid.Column="1"
+                                       Text="{Binding Key}"
+                                       Watermark="Parameter name"
+                                       FontFamily="Consolas,monospace"
+                                       FontSize="12"
+                                       Padding="6,4"
+                                       Margin="0,0,4,0" />
+                              <TextBox Grid.Column="2"
+                                       Text="{Binding Value}"
+                                       Watermark="Value"
+                                       FontFamily="Consolas,monospace"
+                                       FontSize="12"
+                                       Padding="6,4" />
+                              <Button Grid.Column="3"
+                                      Classes="remove-row-btn"
+                                      Command="{Binding RemoveCommand}"
+                                      Margin="4,0,0,0">×</Button>
+                            </Grid>
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                    </ScrollViewer>
+                    <Button Grid.Row="1"
+                            Classes="add-row-btn"
+                            Command="{Binding AddQueryParamCommand}">+ Add Parameter</Button>
+                  </Grid>
+                </TabItem>
+
+                <!-- Body tab -->
+                <TabItem Header="Body">
+                  <Grid RowDefinitions="Auto,*" Background="#1A1A2A">
+                    <Border Grid.Row="0"
+                            Padding="8,6"
+                            BorderThickness="0,0,0,1"
+                            BorderBrush="#3A3A5A">
+                      <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBlock Text="Content-Type:"
+                                   Foreground="#AAAACC"
+                                   FontSize="12"
+                                   VerticalAlignment="Center" />
+                        <ComboBox ItemsSource="{x:Static vm:RequestTabViewModel.ContentTypes}"
+                                  SelectedItem="{Binding SelectedBodyContentType}"
+                                  FontSize="12"
+                                  Padding="8,4" />
+                      </StackPanel>
+                    </Border>
+                    <TextBox Grid.Row="1"
+                             Text="{Binding BodyContent}"
+                             AcceptsReturn="True"
+                             TextWrapping="NoWrap"
+                             FontFamily="Consolas,Courier New,monospace"
+                             FontSize="13"
+                             Padding="12"
+                             Background="#1A1A2A"
+                             BorderThickness="0"
+                             Watermark="Request body (JSON, XML, text…)" />
+                  </Grid>
+                </TabItem>
+
+                <!-- Auth tab (placeholder) -->
+                <TabItem Header="Auth">
+                  <Border Background="#1A1A2A" Padding="16">
+                    <StackPanel Spacing="12">
+                      <TextBlock Text="Authentication" FontSize="14" Foreground="#DDDDEE" />
+                      <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="#888899">
+                        Add Authorization headers manually in the Headers tab.
+                        Common patterns:&#10;
+                        • Bearer token: Authorization: Bearer &lt;token&gt;&#10;
+                        • Basic auth: Authorization: Basic &lt;base64&gt;&#10;
+                        • API key: X-Api-Key: &lt;key&gt;
+                      </TextBlock>
+                    </StackPanel>
+                  </Border>
+                </TabItem>
+
+              </TabControl>
+
+              <!-- ===== SPLITTER ===== -->
+              <GridSplitter Grid.Row="2"
+                            Background="#3A3A5A"
+                            ResizeDirection="Rows" />
+
+              <!-- ===== RESPONSE PANEL ===== -->
+              <Grid Grid.Row="3" RowDefinitions="Auto,*" Background="#1A1A2A">
+
+                <!-- Response status bar -->
+                <Border Grid.Row="0"
+                        Padding="10,6"
+                        Background="#1E1E2E"
+                        BorderThickness="0,0,0,1"
+                        BorderBrush="#3A3A5A">
+                  <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel Grid.Column="0"
+                                Orientation="Horizontal"
+                                Spacing="16">
+
+                      <!-- Spinner while sending -->
+                      <TextBlock Text="Sending…"
+                                 Foreground="#AAAACC"
+                                 FontSize="12"
+                                 VerticalAlignment="Center"
+                                 IsVisible="{Binding IsSending}" />
+
+                      <!-- Status code -->
+                      <TextBlock Text="{Binding ResponseStatus}"
+                                 FontSize="13"
+                                 FontWeight="SemiBold"
+                                 Foreground="{Binding ResponseStatusColor, Converter={x:Static conv:StringToBrushConverter.Instance}}"
+                                 VerticalAlignment="Center"
+                                 IsVisible="{Binding HasResponse}" />
+
+                      <!-- Response time -->
+                      <TextBlock Text="{Binding ResponseTime}"
+                                 FontSize="12"
+                                 Foreground="#888899"
+                                 VerticalAlignment="Center"
+                                 IsVisible="{Binding HasResponse}" />
+
+                      <!-- Response size -->
+                      <TextBlock Text="{Binding ResponseSize}"
+                                 FontSize="12"
+                                 Foreground="#888899"
+                                 VerticalAlignment="Center"
+                                 IsVisible="{Binding HasResponse}" />
+                    </StackPanel>
+
+                    <!-- Hint when no response -->
+                    <TextBlock Grid.Column="1"
+                               Text="Hit Send to get a response"
+                               Foreground="#555566"
+                               FontSize="12"
+                               VerticalAlignment="Center"
+                               IsVisible="{Binding !HasResponse}" />
+                  </Grid>
+                </Border>
+
+                <!-- Response content tabs -->
+                <TabControl Grid.Row="1" Background="#1A1A2A">
+
+                  <!-- Response body -->
+                  <TabItem Header="Body">
+                    <TextBox Text="{Binding ResponseBody}"
+                             IsReadOnly="True"
+                             AcceptsReturn="True"
+                             TextWrapping="NoWrap"
+                             FontFamily="Consolas,Courier New,monospace"
+                             FontSize="12"
+                             Padding="12"
+                             Background="#1A1A2A"
+                             BorderThickness="0"
+                             Foreground="#DDDDEE" />
+                  </TabItem>
+
+                  <!-- Response headers -->
+                  <TabItem Header="Headers">
+                    <ScrollViewer Background="#1A1A2A">
+                      <ItemsControl ItemsSource="{Binding ResponseHeaders}" Margin="8,4">
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate x:DataType="vm:HeaderItemViewModel">
+                            <Grid ColumnDefinitions="*,*" Margin="0,2">
+                              <TextBlock Grid.Column="0"
+                                         Text="{Binding Key}"
+                                         FontWeight="SemiBold"
+                                         FontSize="12"
+                                         Foreground="#9090BB"
+                                         FontFamily="Consolas,monospace"
+                                         TextWrapping="Wrap" />
+                              <TextBlock Grid.Column="1"
+                                         Text="{Binding Value}"
+                                         FontSize="12"
+                                         Foreground="#CCCCDD"
+                                         TextWrapping="Wrap"
+                                         Margin="8,0,0,0" />
+                            </Grid>
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                    </ScrollViewer>
+                  </TabItem>
+
+                </TabControl>
+              </Grid>
+
+            </Grid>
+          </DataTemplate>
+        </ContentControl.DataTemplates>
+      </ContentControl>
+
+    </Grid>
+
+    <!-- ===== SAVE REQUEST DIALOG OVERLAY ===== -->
+    <Border Grid.Column="0" Grid.ColumnSpan="3"
+            IsVisible="{Binding IsSaveDialogOpen}"
+            Background="#88000011">
+      <Border Width="420"
+              Background="#252535"
+              BorderBrush="#5A5A8A"
+              BorderThickness="1"
+              CornerRadius="8"
+              Padding="24"
+              HorizontalAlignment="Center"
+              VerticalAlignment="Center">
+        <StackPanel Spacing="16">
+
+          <TextBlock Text="Save Request"
+                     FontSize="16"
+                     FontWeight="Bold"
+                     Foreground="#DDDDEE" />
+
+          <!-- Request name -->
+          <StackPanel Spacing="6">
+            <TextBlock Text="Request Name" FontSize="12" Foreground="#AAAACC" />
+            <TextBox Text="{Binding SaveRequestName}"
+                     Padding="10,8"
+                     FontSize="13" />
+          </StackPanel>
+
+          <!-- Collection selection -->
+          <StackPanel Spacing="6">
+            <TextBlock Text="Save to Collection / Folder" FontSize="12" Foreground="#AAAACC" />
+            <ListBox ItemsSource="{Binding CollectionTree}"
+                     SelectedItem="{Binding SelectedSaveTarget}"
+                     MaxHeight="200"
+                     Background="#1E1E2E"
+                     BorderBrush="#3A3A5A"
+                     BorderThickness="1">
+              <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="vm:CollectionTreeNodeViewModel">
+                  <TextBlock Text="{Binding Name}" Padding="4" />
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+          </StackPanel>
+
+          <!-- Buttons -->
+          <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+            <Button Background="#333355"
+                    Foreground="#CCCCDD"
+                    BorderThickness="0"
+                    Padding="16,8"
+                    CornerRadius="4"
+                    Command="{Binding CancelSaveDialogCommand}">Cancel</Button>
+            <Button Classes="send-btn"
+                    Command="{Binding SaveRequestCommand}">Save</Button>
+          </StackPanel>
+
+        </StackPanel>
+      </Border>
+    </Border>
+
+  </Grid>
+</Window>

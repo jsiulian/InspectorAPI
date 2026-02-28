@@ -22,7 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <AvaloniaResource Include="**\*.axaml" />
+    <AvaloniaResource Include="**\*.axaml" Exclude="**\obj\**" />
   </ItemGroup>
 
 </Project>

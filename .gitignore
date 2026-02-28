@@ -1,0 +1,5 @@
+RestClient/
+InspectorAPI/*/bin/
+InspectorAPI/*/obj/
+*.user
+.vs/

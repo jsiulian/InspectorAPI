@@ -21,6 +21,12 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty] private string _saveRequestName = string.Empty;
     [ObservableProperty] private CollectionTreeNodeViewModel? _selectedSaveTarget;
 
+    // Name dialog state (used for new collection, new folder, rename)
+    [ObservableProperty] private bool _isNameDialogOpen;
+    [ObservableProperty] private string _nameDialogTitle = string.Empty;
+    [ObservableProperty] private string _nameDialogValue = string.Empty;
+    private Func<string, Task>? _pendingNameAction;
+
     public MainViewModel(ICollectionService collectionService, IHttpRequestService httpRequestService)
     {
         _collectionService = collectionService;
@@ -57,12 +63,33 @@ public partial class MainViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private async Task NewCollection()
+    private void NewCollection()
     {
-        var collection = new Collection { Name = "New Collection" };
-        await _collectionService.SaveCollectionAsync(collection);
-        var node = BuildCollectionNode(collection);
-        CollectionTree.Add(node);
+        _pendingNameAction = async name =>
+        {
+            var collection = new Collection { Name = name };
+            await _collectionService.SaveCollectionAsync(collection);
+            CollectionTree.Add(BuildCollectionNode(collection));
+        };
+        NameDialogTitle = "New Collection";
+        NameDialogValue = string.Empty;
+        IsNameDialogOpen = true;
+    }
+
+    [RelayCommand]
+    private async Task ConfirmNameDialog()
+    {
+        if (_pendingNameAction is not null && !string.IsNullOrWhiteSpace(NameDialogValue))
+            await _pendingNameAction(NameDialogValue);
+        IsNameDialogOpen = false;
+        _pendingNameAction = null;
+    }
+
+    [RelayCommand]
+    private void CancelNameDialog()
+    {
+        IsNameDialogOpen = false;
+        _pendingNameAction = null;
     }
 
     [RelayCommand]
@@ -128,7 +155,7 @@ public partial class MainViewModel : ViewModelBase
             ParentCollectionId = col.Id,
             IsExpanded = false
         };
-        node.SetActions(null, n => _ = DeleteNodeAsync(n), n => _ = NewFolderOnNodeAsync(n));
+        node.SetActions(null, n => _ = DeleteNodeAsync(n), n => NewFolderOnNode(n), n => RenameNode(n));
 
         foreach (var folder in col.Folders)
             node.Children.Add(BuildFolderNode(folder, col.Id, null));
@@ -150,7 +177,7 @@ public partial class MainViewModel : ViewModelBase
             ParentFolderId = parentFolderId,
             IsExpanded = false
         };
-        node.SetActions(null, n => _ = DeleteNodeAsync(n), n => _ = NewFolderOnNodeAsync(n));
+        node.SetActions(null, n => _ = DeleteNodeAsync(n), n => NewFolderOnNode(n), n => RenameNode(n));
 
         foreach (var sub in folder.Folders)
             node.Children.Add(BuildFolderNode(sub, collectionId, folder.Id));
@@ -171,7 +198,7 @@ public partial class MainViewModel : ViewModelBase
             ParentCollectionId = collectionId,
             ParentFolderId = folderId
         };
-        node.SetActions(OpenRequestInTab, n => _ = DeleteNodeAsync(n), null);
+        node.SetActions(OpenRequestInTab, n => _ = DeleteNodeAsync(n), null, n => RenameNode(n));
         return node;
     }
 
@@ -202,15 +229,51 @@ public partial class MainViewModel : ViewModelBase
         }
     }
 
-    private async Task NewFolderOnNodeAsync(CollectionTreeNodeViewModel parent)
+    private void NewFolderOnNode(CollectionTreeNodeViewModel parent)
     {
-        var folder = new CollectionFolder { Name = "New Folder" };
-        var collectionId = GetCollectionId(parent);
-        var folderId = parent.NodeType == CollectionNodeType.Folder ? parent.Folder?.Id : null;
-        await _collectionService.AddFolderAsync(collectionId, folderId, folder);
-        var folderNode = BuildFolderNode(folder, collectionId, folderId);
-        parent.Children.Add(folderNode);
-        parent.IsExpanded = true;
+        _pendingNameAction = async name =>
+        {
+            var folder = new CollectionFolder { Name = name };
+            var collectionId = GetCollectionId(parent);
+            var folderId = parent.NodeType == CollectionNodeType.Folder ? parent.Folder?.Id : null;
+            await _collectionService.AddFolderAsync(collectionId, folderId, folder);
+            parent.Children.Add(BuildFolderNode(folder, collectionId, folderId));
+            parent.IsExpanded = true;
+        };
+        NameDialogTitle = "New Folder";
+        NameDialogValue = string.Empty;
+        IsNameDialogOpen = true;
+    }
+
+    private void RenameNode(CollectionTreeNodeViewModel node)
+    {
+        _pendingNameAction = async name =>
+        {
+            node.Name = name;
+            if (node.NodeType == CollectionNodeType.Collection && node.Collection is not null)
+            {
+                node.Collection.Name = name;
+                await _collectionService.SaveCollectionAsync(node.Collection);
+            }
+            else if (node.NodeType == CollectionNodeType.Folder && node.Folder is not null && node.ParentCollectionId is not null)
+            {
+                await _collectionService.RenameFolderAsync(node.ParentCollectionId.Value, node.Folder.Id, name);
+            }
+            else if (node.NodeType == CollectionNodeType.Request && node.SavedRequest is not null && node.ParentCollectionId is not null)
+            {
+                await _collectionService.RenameRequestAsync(node.ParentCollectionId.Value, node.ParentFolderId, node.SavedRequest.Id, name);
+                var openTab = Tabs.FirstOrDefault(t => t.SavedRequestId == node.SavedRequest.Id);
+                if (openTab is not null) openTab.Name = name;
+            }
+        };
+        NameDialogTitle = node.NodeType switch
+        {
+            CollectionNodeType.Collection => "Rename Collection",
+            CollectionNodeType.Folder => "Rename Folder",
+            _ => "Rename Request"
+        };
+        NameDialogValue = node.Name;
+        IsNameDialogOpen = true;
     }
 
     private static Guid GetCollectionId(CollectionTreeNodeViewModel node) =>

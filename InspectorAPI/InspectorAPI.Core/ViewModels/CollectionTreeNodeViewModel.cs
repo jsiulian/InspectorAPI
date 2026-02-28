@@ -25,6 +25,7 @@ public partial class CollectionTreeNodeViewModel : ViewModelBase
     private Action<CollectionTreeNodeViewModel>? _openAction;
     private Action<CollectionTreeNodeViewModel>? _deleteAction;
     private Action<CollectionTreeNodeViewModel>? _newFolderAction;
+    private Action<CollectionTreeNodeViewModel>? _renameAction;
 
     // Computed visibility helpers (used in AXAML without converters)
     public bool IsRequest => NodeType == CollectionNodeType.Request;
@@ -44,11 +45,13 @@ public partial class CollectionTreeNodeViewModel : ViewModelBase
     public void SetActions(
         Action<CollectionTreeNodeViewModel>? openAction,
         Action<CollectionTreeNodeViewModel>? deleteAction,
-        Action<CollectionTreeNodeViewModel>? newFolderAction)
+        Action<CollectionTreeNodeViewModel>? newFolderAction,
+        Action<CollectionTreeNodeViewModel>? renameAction)
     {
         _openAction = openAction;
         _deleteAction = deleteAction;
         _newFolderAction = newFolderAction;
+        _renameAction = renameAction;
     }
 
     [RelayCommand]
@@ -59,4 +62,7 @@ public partial class CollectionTreeNodeViewModel : ViewModelBase
 
     [RelayCommand]
     private void NewFolder() => _newFolderAction?.Invoke(this);
+
+    [RelayCommand]
+    private void Rename() => _renameAction?.Invoke(this);
 }

@@ -115,6 +115,31 @@ public class CollectionService : ICollectionService
         await SaveCollectionAsync(col);
     }
 
+    public async Task RenameFolderAsync(Guid collectionId, Guid folderId, string newName)
+    {
+        var collections = await LoadAllAsync();
+        var col = collections.FirstOrDefault(c => c.Id == collectionId);
+        if (col is null) return;
+        var folder = FindFolder(col, folderId);
+        if (folder is null) return;
+        folder.Name = newName;
+        await SaveCollectionAsync(col);
+    }
+
+    public async Task RenameRequestAsync(Guid collectionId, Guid? folderId, Guid requestId, string newName)
+    {
+        var collections = await LoadAllAsync();
+        var col = collections.FirstOrDefault(c => c.Id == collectionId);
+        if (col is null) return;
+        var list = folderId is null
+            ? col.Requests
+            : FindFolder(col, folderId.Value)?.Requests ?? col.Requests;
+        var req = list.FirstOrDefault(r => r.Id == requestId);
+        if (req is null) return;
+        req.Name = newName;
+        await SaveCollectionAsync(col);
+    }
+
     private static CollectionFolder? FindFolder(Collection col, Guid folderId)
     {
         return FindFolderRecursive(col.Folders, folderId);

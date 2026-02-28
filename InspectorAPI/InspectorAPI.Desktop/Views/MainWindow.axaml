@@ -229,6 +229,10 @@
                           Command="{Binding NewFolderCommand}"
                           IsVisible="{Binding IsCollectionOrFolder}"
                           ToolTip.Tip="New folder" FontSize="10">📁</Button>
+                  <!-- Rename -->
+                  <Button Classes="sidebar-btn"
+                          Command="{Binding RenameCommand}"
+                          ToolTip.Tip="Rename" FontSize="10">✎</Button>
                   <!-- Delete -->
                   <Button Classes="sidebar-btn"
                           Command="{Binding DeleteCommand}"
@@ -599,6 +603,43 @@
       </ContentControl>
 
     </Grid>
+
+    <!-- ===== NAME DIALOG OVERLAY (new collection / new folder / rename) ===== -->
+    <Border Grid.Column="0" Grid.ColumnSpan="3"
+            IsVisible="{Binding IsNameDialogOpen}"
+            Background="#88000011">
+      <Border Width="360"
+              Background="#252535"
+              BorderBrush="#5A5A8A"
+              BorderThickness="1"
+              CornerRadius="8"
+              Padding="24"
+              HorizontalAlignment="Center"
+              VerticalAlignment="Center">
+        <StackPanel Spacing="16">
+
+          <TextBlock Text="{Binding NameDialogTitle}"
+                     FontSize="16" FontWeight="Bold"
+                     Foreground="#DDDDEE" />
+
+          <TextBox Text="{Binding NameDialogValue}"
+                   Padding="10,8"
+                   FontSize="13" />
+
+          <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+            <Button Background="#333355"
+                    Foreground="#CCCCDD"
+                    BorderThickness="0"
+                    Padding="16,8"
+                    CornerRadius="4"
+                    Command="{Binding CancelNameDialogCommand}">Cancel</Button>
+            <Button Classes="send-btn"
+                    Command="{Binding ConfirmNameDialogCommand}">OK</Button>
+          </StackPanel>
+
+        </StackPanel>
+      </Border>
+    </Border>
 
     <!-- ===== SAVE REQUEST DIALOG OVERLAY ===== -->
     <Border Grid.Column="0" Grid.ColumnSpan="3"

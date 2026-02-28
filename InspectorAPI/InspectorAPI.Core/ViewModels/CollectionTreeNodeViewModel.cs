@@ -9,8 +9,14 @@ public enum CollectionNodeType { Collection, Folder, Request }
 
 public partial class CollectionTreeNodeViewModel : ViewModelBase
 {
-    [ObservableProperty] private string _name = string.Empty;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(FlatTargetDisplayName))]
+    private string _name = string.Empty;
     [ObservableProperty] private bool _isExpanded;
+
+    public int FlatDepth { get; set; }
+    public string FlatTargetDisplayName =>
+        new string(' ', FlatDepth * 4) + (FlatDepth == 0 ? "📁 " : "📂 ") + Name;
 
     public CollectionNodeType NodeType { get; init; }
     public Collection? Collection { get; init; }

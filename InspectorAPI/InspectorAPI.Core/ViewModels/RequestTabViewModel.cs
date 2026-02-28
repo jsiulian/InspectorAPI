@@ -43,6 +43,7 @@ public partial class RequestTabViewModel : ViewModelBase
     [ObservableProperty] private bool _isSending;
     [ObservableProperty] private bool _hasResponse;
     [ObservableProperty] private bool _isDirty;
+    [ObservableProperty] private bool _isSelected;
 
     // Response fields
     [ObservableProperty] private string _responseStatus = string.Empty;
@@ -50,6 +51,7 @@ public partial class RequestTabViewModel : ViewModelBase
     [ObservableProperty] private string _responseTime = string.Empty;
     [ObservableProperty] private string _responseSize = string.Empty;
     [ObservableProperty] private string _responseBody = string.Empty;
+    [ObservableProperty] private string _responseRawBody = string.Empty;
 
     // Saved request tracking
     public Guid? SavedRequestId { get; private set; }
@@ -60,9 +62,15 @@ public partial class RequestTabViewModel : ViewModelBase
     public ObservableCollection<HeaderItemViewModel> QueryParams { get; } = [];
     public ObservableCollection<HeaderItemViewModel> ResponseHeaders { get; } = [];
 
-    public string TabTitle => string.IsNullOrWhiteSpace(Url) ? Name :
-        (Uri.TryCreate(Url, UriKind.Absolute, out var uri) ? uri.AbsolutePath : Url)
-            .TrimEnd('/').Split('/').LastOrDefault(Name) ?? Name;
+    public string TabTitle
+    {
+        get
+        {
+            if (SavedRequestId.HasValue) return Name;
+            if (string.IsNullOrWhiteSpace(Url)) return Name;
+            return Uri.TryCreate(Url, UriKind.Absolute, out var uri) ? uri.Host : Url;
+        }
+    }
 
     public RequestTabViewModel(
         IHttpRequestService httpRequestService,
@@ -127,6 +135,7 @@ public partial class RequestTabViewModel : ViewModelBase
         HasResponse = false;
         ResponseStatus = string.Empty;
         ResponseBody = string.Empty;
+        ResponseRawBody = string.Empty;
         ResponseHeaders.Clear();
 
         try
@@ -146,6 +155,7 @@ public partial class RequestTabViewModel : ViewModelBase
                 ResponseStatusColor = response.IsSuccess ? "#00875A" : "#CC0000";
                 ResponseTime = $"{response.ElapsedMilliseconds} ms";
                 ResponseSize = FormatSize(response.BodySizeBytes);
+                ResponseRawBody = response.Body;
                 ResponseBody = TryPrettyPrintJson(response.Body);
 
                 ResponseHeaders.Clear();

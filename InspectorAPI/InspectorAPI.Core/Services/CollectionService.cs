@@ -115,6 +115,18 @@ public class CollectionService : ICollectionService
         await SaveCollectionAsync(col);
     }
 
+    public async Task DeleteFolderAsync(Guid collectionId, Guid? parentFolderId, Guid folderId)
+    {
+        var collections = await LoadAllAsync();
+        var col = collections.FirstOrDefault(c => c.Id == collectionId);
+        if (col is null) return;
+        var parentList = parentFolderId is null
+            ? col.Folders
+            : FindFolder(col, parentFolderId.Value)?.Folders;
+        parentList?.RemoveAll(f => f.Id == folderId);
+        await SaveCollectionAsync(col);
+    }
+
     public async Task RenameFolderAsync(Guid collectionId, Guid folderId, string newName)
     {
         var collections = await LoadAllAsync();

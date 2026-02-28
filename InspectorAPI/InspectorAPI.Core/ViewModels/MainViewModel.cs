@@ -20,6 +20,7 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty] private bool _isSaveDialogOpen;
     [ObservableProperty] private string _saveRequestName = string.Empty;
     [ObservableProperty] private CollectionTreeNodeViewModel? _selectedSaveTarget;
+    public ObservableCollection<CollectionTreeNodeViewModel> FlatSaveTargets { get; } = [];
 
     // Name dialog state (used for new collection, new folder, rename)
     [ObservableProperty] private bool _isNameDialogOpen;
@@ -47,11 +48,39 @@ public partial class MainViewModel : ViewModelBase
         SelectedTab = tab;
     }
 
+    partial void OnSelectedTabChanged(RequestTabViewModel? value)
+    {
+        foreach (var tab in Tabs)
+            tab.IsSelected = tab == value;
+    }
+
     private void OpenSaveDialogForTab(RequestTabViewModel tab)
     {
         SelectedTab = tab;
         SaveRequestName = tab.Name;
+        RebuildFlatSaveTargets();
         IsSaveDialogOpen = true;
+    }
+
+    private void RebuildFlatSaveTargets()
+    {
+        FlatSaveTargets.Clear();
+        foreach (var col in CollectionTree)
+        {
+            col.FlatDepth = 0;
+            FlatSaveTargets.Add(col);
+            AddFlatFolders(col.Children, 1);
+        }
+    }
+
+    private void AddFlatFolders(ObservableCollection<CollectionTreeNodeViewModel> nodes, int depth)
+    {
+        foreach (var node in nodes.Where(n => n.NodeType != CollectionNodeType.Request))
+        {
+            node.FlatDepth = depth;
+            FlatSaveTargets.Add(node);
+            AddFlatFolders(node.Children, depth + 1);
+        }
     }
 
     private void CloseTab(RequestTabViewModel tab)
@@ -219,6 +248,11 @@ public partial class MainViewModel : ViewModelBase
         {
             await _collectionService.DeleteCollectionAsync(node.Collection.Id);
             CollectionTree.Remove(node);
+        }
+        else if (node.NodeType == CollectionNodeType.Folder && node.Folder is not null && node.ParentCollectionId is not null)
+        {
+            await _collectionService.DeleteFolderAsync(node.ParentCollectionId.Value, node.ParentFolderId, node.Folder.Id);
+            RemoveNodeFromTree(CollectionTree, node);
         }
         else if (node.NodeType == CollectionNodeType.Request && node.SavedRequest is not null && node.ParentCollectionId is not null)
         {

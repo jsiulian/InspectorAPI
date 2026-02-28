@@ -277,6 +277,7 @@
               <DataTemplate x:DataType="vm:RequestTabViewModel">
                 <Border BorderThickness="0,0,1,0" BorderBrush="#3A3A5A">
                   <Button Classes="tab-btn"
+                          Classes.active="{Binding IsSelected}"
                           Command="{Binding ActivateCommand}">
                     <StackPanel Orientation="Horizontal" Spacing="8">
                       <TextBlock Text="{Binding SelectedMethod}"
@@ -553,20 +554,6 @@
                 <!-- Response content tabs -->
                 <TabControl Grid.Row="1" Background="#1A1A2A">
 
-                  <!-- Response body -->
-                  <TabItem Header="Body">
-                    <TextBox Text="{Binding ResponseBody}"
-                             IsReadOnly="True"
-                             AcceptsReturn="True"
-                             TextWrapping="NoWrap"
-                             FontFamily="Consolas,Courier New,monospace"
-                             FontSize="12"
-                             Padding="12"
-                             Background="#1A1A2A"
-                             BorderThickness="0"
-                             Foreground="#DDDDEE" />
-                  </TabItem>
-
                   <!-- Response headers -->
                   <TabItem Header="Headers">
                     <ScrollViewer Background="#1A1A2A">
@@ -592,6 +579,34 @@
                         </ItemsControl.ItemTemplate>
                       </ItemsControl>
                     </ScrollViewer>
+                  </TabItem>
+
+                  <!-- Response body (pretty-printed) -->
+                  <TabItem Header="Body">
+                    <TextBox Text="{Binding ResponseBody}"
+                             IsReadOnly="True"
+                             AcceptsReturn="True"
+                             TextWrapping="NoWrap"
+                             FontFamily="Consolas,Courier New,monospace"
+                             FontSize="12"
+                             Padding="12"
+                             Background="#1A1A2A"
+                             BorderThickness="0"
+                             Foreground="#DDDDEE" />
+                  </TabItem>
+
+                  <!-- Raw response -->
+                  <TabItem Header="Raw">
+                    <TextBox Text="{Binding ResponseRawBody}"
+                             IsReadOnly="True"
+                             AcceptsReturn="True"
+                             TextWrapping="NoWrap"
+                             FontFamily="Consolas,Courier New,monospace"
+                             FontSize="12"
+                             Padding="12"
+                             Background="#1A1A2A"
+                             BorderThickness="0"
+                             Foreground="#DDDDEE" />
                   </TabItem>
 
                 </TabControl>
@@ -671,7 +686,7 @@
           <!-- Collection selection -->
           <StackPanel Spacing="6">
             <TextBlock Text="Save to Collection / Folder" FontSize="12" Foreground="#AAAACC" />
-            <ListBox ItemsSource="{Binding CollectionTree}"
+            <ListBox ItemsSource="{Binding FlatSaveTargets}"
                      SelectedItem="{Binding SelectedSaveTarget}"
                      MaxHeight="200"
                      Background="#1E1E2E"
@@ -679,7 +694,9 @@
                      BorderThickness="1">
               <ListBox.ItemTemplate>
                 <DataTemplate x:DataType="vm:CollectionTreeNodeViewModel">
-                  <TextBlock Text="{Binding Name}" Padding="4" />
+                  <TextBlock Text="{Binding FlatTargetDisplayName}"
+                             FontFamily="Consolas,monospace"
+                             Padding="4" />
                 </DataTemplate>
               </ListBox.ItemTemplate>
             </ListBox>

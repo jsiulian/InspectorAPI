@@ -11,6 +11,7 @@ public interface ICollectionService
     Task UpdateRequestAsync(Guid collectionId, Guid? folderId, SavedRequest request);
     Task DeleteRequestAsync(Guid collectionId, Guid? folderId, Guid requestId);
     Task AddFolderAsync(Guid collectionId, Guid? parentFolderId, CollectionFolder folder);
+    Task DeleteFolderAsync(Guid collectionId, Guid? parentFolderId, Guid folderId);
     Task RenameFolderAsync(Guid collectionId, Guid folderId, string newName);
     Task RenameRequestAsync(Guid collectionId, Guid? folderId, Guid requestId, string newName);
 }

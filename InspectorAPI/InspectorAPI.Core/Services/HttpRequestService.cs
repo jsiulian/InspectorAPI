@@ -45,6 +45,20 @@ public class HttpRequestService : IHttpRequestService
                 httpRequest.Content = content;
             }
 
+            // Capture all headers that will actually be sent (including implicit ones)
+            if (httpRequest.Content != null)
+                await httpRequest.Content.LoadIntoBufferAsync();
+
+            var sentHeaders = new Dictionary<string, string>();
+            // Host is implicit — derive it from the URL
+            if (Uri.TryCreate(url, UriKind.Absolute, out var hostUri))
+                sentHeaders["Host"] = hostUri.IsDefaultPort ? hostUri.Host : $"{hostUri.Host}:{hostUri.Port}";
+            foreach (var h in httpRequest.Headers)
+                sentHeaders[h.Key] = string.Join(", ", h.Value);
+            if (httpRequest.Content != null)
+                foreach (var h in httpRequest.Content.Headers)
+                    sentHeaders[h.Key] = string.Join(", ", h.Value);
+
             var sw = Stopwatch.StartNew();
             using var response = await _httpClient.SendAsync(httpRequest, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
             var bodyBytes = await response.Content.ReadAsByteArrayAsync(cancellationToken);
@@ -63,6 +77,7 @@ public class HttpRequestService : IHttpRequestService
                 StatusCode = (int)response.StatusCode,
                 StatusText = response.ReasonPhrase ?? response.StatusCode.ToString(),
                 Headers = headers,
+                SentRequestHeaders = sentHeaders,
                 Body = bodyText,
                 ElapsedMilliseconds = sw.ElapsedMilliseconds,
                 BodySizeBytes = bodyBytes.Length

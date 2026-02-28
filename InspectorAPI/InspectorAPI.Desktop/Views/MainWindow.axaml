@@ -7,36 +7,44 @@
         Title="InspectorAPI"
         Width="1280" Height="800"
         MinWidth="900" MinHeight="600"
-        Background="#1A1A2A">
+        Background="{DynamicResource AppBg}">
 
   <Window.Styles>
 
-    <!-- Sidebar button style -->
+    <!-- Sidebar button -->
     <Style Selector="Button.sidebar-btn">
       <Setter Property="Background" Value="Transparent" />
       <Setter Property="BorderThickness" Value="0" />
       <Setter Property="Padding" Value="6,3" />
-      <Setter Property="Foreground" Value="#AAAACC" />
+      <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
     </Style>
     <Style Selector="Button.sidebar-btn:pointerover /template/ ContentPresenter">
-      <Setter Property="Background" Value="#2A2A4A" />
+      <Setter Property="Background" Value="{DynamicResource SelectionBg}" />
     </Style>
 
     <!-- Tab button -->
     <Style Selector="Button.tab-btn">
-      <Setter Property="Background" Value="#252535" />
+      <Setter Property="Background" Value="{DynamicResource TabbarBg}" />
       <Setter Property="BorderThickness" Value="0,0,1,0" />
-      <Setter Property="BorderBrush" Value="#3A3A5A" />
+      <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}" />
       <Setter Property="Padding" Value="12,8" />
-      <Setter Property="Foreground" Value="#CCCCDD" />
+      <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
       <Setter Property="CornerRadius" Value="0" />
     </Style>
     <Style Selector="Button.tab-btn.active">
-      <Setter Property="Background" Value="#1A1A2A" />
-      <Setter Property="BorderBrush" Value="#3A3A5A" />
+      <Setter Property="Background" Value="{DynamicResource AppBg}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}" />
     </Style>
     <Style Selector="Button.tab-btn:pointerover /template/ ContentPresenter">
-      <Setter Property="Background" Value="#2A2A3A" />
+      <Setter Property="Background" Value="{DynamicResource HoverBg}" />
+    </Style>
+    <!-- Active tab: suppress hover so it stays visually "connected" to content -->
+    <Style Selector="Button.tab-btn.active:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource AppBg}" />
+    </Style>
+    <!-- Active tab: underline the title text -->
+    <Style Selector="Button.tab-btn.active TextBlock.tab-title">
+      <Setter Property="TextDecorations" Value="Underline" />
     </Style>
 
     <!-- Close tab button -->
@@ -44,7 +52,7 @@
       <Setter Property="Background" Value="Transparent" />
       <Setter Property="BorderThickness" Value="0" />
       <Setter Property="Padding" Value="2,0" />
-      <Setter Property="Foreground" Value="#888899" />
+      <Setter Property="Foreground" Value="{DynamicResource TextFaint}" />
       <Setter Property="FontSize" Value="14" />
       <Setter Property="Width" Value="20" />
       <Setter Property="Height" Value="20" />
@@ -68,7 +76,7 @@
       <Setter Property="Background" Value="#9080FF" />
     </Style>
     <Style Selector="Button.send-btn:disabled /template/ ContentPresenter">
-      <Setter Property="Background" Value="#444466" />
+      <Setter Property="Background" Value="{DynamicResource DisabledBg}" />
     </Style>
 
     <!-- New tab button -->
@@ -76,7 +84,7 @@
       <Setter Property="Background" Value="Transparent" />
       <Setter Property="BorderThickness" Value="0" />
       <Setter Property="Padding" Value="8,6" />
-      <Setter Property="Foreground" Value="#AAAACC" />
+      <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
       <Setter Property="FontSize" Value="18" />
     </Style>
 
@@ -84,9 +92,9 @@
     <Style Selector="Button.add-row-btn">
       <Setter Property="Background" Value="Transparent" />
       <Setter Property="BorderThickness" Value="1" />
-      <Setter Property="BorderBrush" Value="#3A3A5A" />
+      <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}" />
       <Setter Property="Padding" Value="10,5" />
-      <Setter Property="Foreground" Value="#AAAACC" />
+      <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
       <Setter Property="FontSize" Value="12" />
       <Setter Property="CornerRadius" Value="3" />
       <Setter Property="Margin" Value="8,4" />
@@ -97,7 +105,7 @@
       <Setter Property="Background" Value="Transparent" />
       <Setter Property="BorderThickness" Value="0" />
       <Setter Property="Padding" Value="4,2" />
-      <Setter Property="Foreground" Value="#666677" />
+      <Setter Property="Foreground" Value="{DynamicResource TextVeryFaint}" />
       <Setter Property="FontSize" Value="16" />
     </Style>
     <Style Selector="Button.remove-row-btn:pointerover /template/ ContentPresenter">
@@ -107,34 +115,34 @@
 
     <!-- TextBox base -->
     <Style Selector="TextBox">
-      <Setter Property="Background" Value="#2A2A3A" />
-      <Setter Property="Foreground" Value="#DDDDEE" />
-      <Setter Property="BorderBrush" Value="#3A3A5A" />
+      <Setter Property="Background" Value="{DynamicResource InputBg}" />
+      <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}" />
       <Setter Property="CaretBrush" Value="#7C6AF7" />
-      <Setter Property="SelectionBrush" Value="#4A4A8A" />
+      <Setter Property="SelectionBrush" Value="{DynamicResource TextSelectionBrush}" />
     </Style>
 
     <!-- ComboBox base -->
     <Style Selector="ComboBox">
-      <Setter Property="Background" Value="#2A2A3A" />
-      <Setter Property="Foreground" Value="#DDDDEE" />
-      <Setter Property="BorderBrush" Value="#3A3A5A" />
+      <Setter Property="Background" Value="{DynamicResource InputBg}" />
+      <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}" />
     </Style>
 
     <!-- TabItem -->
     <Style Selector="TabItem">
       <Setter Property="Background" Value="Transparent" />
-      <Setter Property="Foreground" Value="#AAAACC" />
+      <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
       <Setter Property="FontSize" Value="12" />
     </Style>
     <Style Selector="TabItem:selected">
-      <Setter Property="Foreground" Value="#DDDDEE" />
+      <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
     </Style>
 
     <!-- Tree item -->
     <Style Selector="TreeViewItem">
       <Setter Property="Background" Value="Transparent" />
-      <Setter Property="Foreground" Value="#CCCCDD" />
+      <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
       <Setter Property="FontSize" Value="12" />
       <Setter Property="Padding" Value="2" />
     </Style>
@@ -161,22 +169,33 @@
     <Style Selector="TextBlock.method-OPTIONS">
       <Setter Property="Foreground" Value="#0D5AA7" />
     </Style>
+
+    <!-- Hover action buttons: always hold their column width, revealed via opacity -->
+    <Style Selector="StackPanel.hover-actions">
+      <Setter Property="Opacity" Value="0" />
+      <Setter Property="IsHitTestVisible" Value="False" />
+    </Style>
+    <Style Selector="TreeViewItem:pointerover StackPanel.hover-actions">
+      <Setter Property="Opacity" Value="1" />
+      <Setter Property="IsHitTestVisible" Value="True" />
+    </Style>
+
   </Window.Styles>
 
   <Grid ColumnDefinitions="280,4,*">
 
     <!-- ===== COLLECTIONS SIDEBAR ===== -->
-    <DockPanel Grid.Column="0" Background="#1E1E2E">
+    <DockPanel Grid.Column="0" Background="{DynamicResource SidebarBg}">
 
       <!-- Sidebar header -->
-      <Border DockPanel.Dock="Top" Background="#161626"
-              BorderThickness="0,0,0,1" BorderBrush="#3A3A5A"
+      <Border DockPanel.Dock="Top" Background="{DynamicResource HeaderBg}"
+              BorderThickness="0,0,0,1" BorderBrush="{DynamicResource BorderColor}"
               Padding="12,8">
         <Grid ColumnDefinitions="*,Auto,Auto">
           <TextBlock Grid.Column="0"
                      Text="COLLECTIONS"
                      FontSize="10" FontWeight="Bold"
-                     Foreground="#7777AA"
+                     Foreground="{DynamicResource TextLabel}"
                      VerticalAlignment="Center"
                      LetterSpacing="1" />
           <Button Grid.Column="1"
@@ -200,7 +219,7 @@
                 <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="4">
                   <TextBlock Text="{Binding Icon}"
                              FontSize="11"
-                             Foreground="#7777AA"
+                             Foreground="{DynamicResource TextLabel}"
                              IsVisible="{Binding IsNotRequest}" />
                   <TextBlock Text="{Binding MethodBadge}"
                              FontSize="9" FontWeight="Bold"
@@ -216,9 +235,9 @@
                            Margin="4,0"
                            TextTrimming="CharacterEllipsis" />
 
-                <!-- Hover action buttons — all bound to node's own commands -->
+                <!-- Hover action buttons — always occupy space, revealed via opacity -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="2"
-                            IsVisible="{Binding $parent[TreeViewItem].IsPointerOver}">
+                            Classes="hover-actions">
                   <!-- Open request -->
                   <Button Classes="sidebar-btn"
                           Command="{Binding OpenCommand}"
@@ -247,14 +266,14 @@
 
     <!-- Vertical splitter -->
     <GridSplitter Grid.Column="1"
-                  Background="#3A3A5A"
+                  Background="{DynamicResource BorderColor}"
                   ResizeDirection="Columns" />
 
     <!-- ===== MAIN CONTENT ===== -->
-    <Grid Grid.Column="2" RowDefinitions="Auto,*" Background="#1A1A2A">
+    <Grid Grid.Column="2" RowDefinitions="Auto,*" Background="{DynamicResource AppBg}">
 
       <!-- Tab bar row -->
-      <DockPanel Grid.Row="0" Background="#252535"
+      <DockPanel Grid.Row="0" Background="{DynamicResource TabbarBg}"
                  LastChildFill="True">
 
         <!-- New tab button -->
@@ -275,7 +294,7 @@
             </ItemsControl.ItemsPanel>
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="vm:RequestTabViewModel">
-                <Border BorderThickness="0,0,1,0" BorderBrush="#3A3A5A">
+                <Border BorderThickness="0,0,1,0" BorderBrush="{DynamicResource BorderColor}">
                   <Button Classes="tab-btn"
                           Classes.active="{Binding IsSelected}"
                           Command="{Binding ActivateCommand}">
@@ -285,6 +304,7 @@
                                  VerticalAlignment="Center"
                                  Foreground="#61AFFE" />
                       <TextBlock Text="{Binding TabTitle}"
+                                 Classes="tab-title"
                                  MaxWidth="140"
                                  TextTrimming="CharacterEllipsis"
                                  VerticalAlignment="Center" />
@@ -309,8 +329,8 @@
 
               <!-- ===== REQUEST BAR ===== -->
               <Border Grid.Row="0" Padding="10,8"
-                      Background="#1E1E2E"
-                      BorderThickness="0,0,0,1" BorderBrush="#3A3A5A">
+                      Background="{DynamicResource SidebarBg}"
+                      BorderThickness="0,0,0,1" BorderBrush="{DynamicResource BorderColor}">
                 <Grid ColumnDefinitions="150,*,Auto,Auto,Auto">
 
                   <!-- Method selector -->
@@ -348,10 +368,10 @@
 
                   <!-- Save button -->
                   <Button Grid.Column="3"
-                          Background="#2A2A4A"
-                          Foreground="#CCCCDD"
+                          Background="{DynamicResource SelectionBg}"
+                          Foreground="{DynamicResource TextSecondary}"
                           BorderThickness="1"
-                          BorderBrush="#4A4A7A"
+                          BorderBrush="{DynamicResource ButtonBorderColor}"
                           Padding="12,8"
                           CornerRadius="4"
                           Margin="6,0,0,0"
@@ -361,11 +381,11 @@
               </Border>
 
               <!-- ===== REQUEST CONFIGURATION TABS ===== -->
-              <TabControl Grid.Row="1" Background="#1A1A2A">
+              <TabControl Grid.Row="1" Background="{DynamicResource AppBg}">
 
                 <!-- Headers tab -->
                 <TabItem Header="Headers">
-                  <Grid RowDefinitions="*,Auto" Background="#1A1A2A">
+                  <Grid RowDefinitions="*,Auto" Background="{DynamicResource AppBg}">
                     <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto">
                       <ItemsControl ItemsSource="{Binding Headers}" Margin="8,4">
                         <ItemsControl.ItemTemplate>
@@ -405,7 +425,7 @@
 
                 <!-- Query Params tab -->
                 <TabItem Header="Query Params">
-                  <Grid RowDefinitions="*,Auto" Background="#1A1A2A">
+                  <Grid RowDefinitions="*,Auto" Background="{DynamicResource AppBg}">
                     <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto">
                       <ItemsControl ItemsSource="{Binding QueryParams}" Margin="8,4">
                         <ItemsControl.ItemTemplate>
@@ -445,14 +465,14 @@
 
                 <!-- Body tab -->
                 <TabItem Header="Body">
-                  <Grid RowDefinitions="Auto,*" Background="#1A1A2A">
+                  <Grid RowDefinitions="Auto,*" Background="{DynamicResource AppBg}">
                     <Border Grid.Row="0"
                             Padding="8,6"
                             BorderThickness="0,0,0,1"
-                            BorderBrush="#3A3A5A">
+                            BorderBrush="{DynamicResource BorderColor}">
                       <StackPanel Orientation="Horizontal" Spacing="8">
                         <TextBlock Text="Content-Type:"
-                                   Foreground="#AAAACC"
+                                   Foreground="{DynamicResource TextMuted}"
                                    FontSize="12"
                                    VerticalAlignment="Center" />
                         <ComboBox ItemsSource="{x:Static vm:RequestTabViewModel.ContentTypes}"
@@ -468,7 +488,7 @@
                              FontFamily="Consolas,Courier New,monospace"
                              FontSize="13"
                              Padding="12"
-                             Background="#1A1A2A"
+                             Background="{DynamicResource AppBg}"
                              BorderThickness="0"
                              Watermark="Request body (JSON, XML, text…)" />
                   </Grid>
@@ -476,10 +496,10 @@
 
                 <!-- Auth tab (placeholder) -->
                 <TabItem Header="Auth">
-                  <Border Background="#1A1A2A" Padding="16">
+                  <Border Background="{DynamicResource AppBg}" Padding="16">
                     <StackPanel Spacing="12">
-                      <TextBlock Text="Authentication" FontSize="14" Foreground="#DDDDEE" />
-                      <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="#888899">
+                      <TextBlock Text="Authentication" FontSize="14" Foreground="{DynamicResource TextPrimary}" />
+                      <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource TextFaint}">
                         Add Authorization headers manually in the Headers tab.
                         Common patterns:&#10;
                         • Bearer token: Authorization: Bearer &lt;token&gt;&#10;
@@ -494,18 +514,18 @@
 
               <!-- ===== SPLITTER ===== -->
               <GridSplitter Grid.Row="2"
-                            Background="#3A3A5A"
+                            Background="{DynamicResource BorderColor}"
                             ResizeDirection="Rows" />
 
               <!-- ===== RESPONSE PANEL ===== -->
-              <Grid Grid.Row="3" RowDefinitions="Auto,*" Background="#1A1A2A">
+              <Grid Grid.Row="3" RowDefinitions="Auto,*" Background="{DynamicResource AppBg}">
 
                 <!-- Response status bar -->
                 <Border Grid.Row="0"
                         Padding="10,6"
-                        Background="#1E1E2E"
+                        Background="{DynamicResource SidebarBg}"
                         BorderThickness="0,0,0,1"
-                        BorderBrush="#3A3A5A">
+                        BorderBrush="{DynamicResource BorderColor}">
                   <Grid ColumnDefinitions="*,Auto">
                     <StackPanel Grid.Column="0"
                                 Orientation="Horizontal"
@@ -513,7 +533,7 @@
 
                       <!-- Spinner while sending -->
                       <TextBlock Text="Sending…"
-                                 Foreground="#AAAACC"
+                                 Foreground="{DynamicResource TextMuted}"
                                  FontSize="12"
                                  VerticalAlignment="Center"
                                  IsVisible="{Binding IsSending}" />
@@ -529,14 +549,14 @@
                       <!-- Response time -->
                       <TextBlock Text="{Binding ResponseTime}"
                                  FontSize="12"
-                                 Foreground="#888899"
+                                 Foreground="{DynamicResource TextFaint}"
                                  VerticalAlignment="Center"
                                  IsVisible="{Binding HasResponse}" />
 
                       <!-- Response size -->
                       <TextBlock Text="{Binding ResponseSize}"
                                  FontSize="12"
-                                 Foreground="#888899"
+                                 Foreground="{DynamicResource TextFaint}"
                                  VerticalAlignment="Center"
                                  IsVisible="{Binding HasResponse}" />
                     </StackPanel>
@@ -544,7 +564,7 @@
                     <!-- Hint when no response -->
                     <TextBlock Grid.Column="1"
                                Text="Hit Send to get a response"
-                               Foreground="#555566"
+                               Foreground="{DynamicResource TextVeryFaint}"
                                FontSize="12"
                                VerticalAlignment="Center"
                                IsVisible="{Binding !HasResponse}" />
@@ -552,11 +572,11 @@
                 </Border>
 
                 <!-- Response content tabs -->
-                <TabControl Grid.Row="1" Background="#1A1A2A">
+                <TabControl Grid.Row="1" Background="{DynamicResource AppBg}">
 
                   <!-- Response headers -->
                   <TabItem Header="Headers">
-                    <ScrollViewer Background="#1A1A2A">
+                    <ScrollViewer Background="{DynamicResource AppBg}">
                       <ItemsControl ItemsSource="{Binding ResponseHeaders}" Margin="8,4">
                         <ItemsControl.ItemTemplate>
                           <DataTemplate x:DataType="vm:HeaderItemViewModel">
@@ -565,13 +585,13 @@
                                          Text="{Binding Key}"
                                          FontWeight="SemiBold"
                                          FontSize="12"
-                                         Foreground="#9090BB"
+                                         Foreground="{DynamicResource TextHeaderKey}"
                                          FontFamily="Consolas,monospace"
                                          TextWrapping="Wrap" />
                               <TextBlock Grid.Column="1"
                                          Text="{Binding Value}"
                                          FontSize="12"
-                                         Foreground="#CCCCDD"
+                                         Foreground="{DynamicResource TextSecondary}"
                                          TextWrapping="Wrap"
                                          Margin="8,0,0,0" />
                             </Grid>
@@ -590,12 +610,12 @@
                              FontFamily="Consolas,Courier New,monospace"
                              FontSize="12"
                              Padding="12"
-                             Background="#1A1A2A"
+                             Background="{DynamicResource AppBg}"
                              BorderThickness="0"
-                             Foreground="#DDDDEE" />
+                             Foreground="{DynamicResource TextPrimary}" />
                   </TabItem>
 
-                  <!-- Raw response -->
+                  <!-- Raw (full HTTP exchange: request line + sent headers + response headers + body) -->
                   <TabItem Header="Raw">
                     <TextBox Text="{Binding ResponseRawBody}"
                              IsReadOnly="True"
@@ -604,9 +624,9 @@
                              FontFamily="Consolas,Courier New,monospace"
                              FontSize="12"
                              Padding="12"
-                             Background="#1A1A2A"
+                             Background="{DynamicResource AppBg}"
                              BorderThickness="0"
-                             Foreground="#DDDDEE" />
+                             Foreground="{DynamicResource TextPrimary}" />
                   </TabItem>
 
                 </TabControl>
@@ -624,8 +644,8 @@
             IsVisible="{Binding IsNameDialogOpen}"
             Background="#88000011">
       <Border Width="360"
-              Background="#252535"
-              BorderBrush="#5A5A8A"
+              Background="{DynamicResource DialogBg}"
+              BorderBrush="{DynamicResource DialogBorderColor}"
               BorderThickness="1"
               CornerRadius="8"
               Padding="24"
@@ -635,15 +655,15 @@
 
           <TextBlock Text="{Binding NameDialogTitle}"
                      FontSize="16" FontWeight="Bold"
-                     Foreground="#DDDDEE" />
+                     Foreground="{DynamicResource TextPrimary}" />
 
           <TextBox Text="{Binding NameDialogValue}"
                    Padding="10,8"
                    FontSize="13" />
 
           <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
-            <Button Background="#333355"
-                    Foreground="#CCCCDD"
+            <Button Background="{DynamicResource BtnSecondaryBg}"
+                    Foreground="{DynamicResource TextSecondary}"
                     BorderThickness="0"
                     Padding="16,8"
                     CornerRadius="4"
@@ -661,8 +681,8 @@
             IsVisible="{Binding IsSaveDialogOpen}"
             Background="#88000011">
       <Border Width="420"
-              Background="#252535"
-              BorderBrush="#5A5A8A"
+              Background="{DynamicResource DialogBg}"
+              BorderBrush="{DynamicResource DialogBorderColor}"
               BorderThickness="1"
               CornerRadius="8"
               Padding="24"
@@ -673,11 +693,11 @@
           <TextBlock Text="Save Request"
                      FontSize="16"
                      FontWeight="Bold"
-                     Foreground="#DDDDEE" />
+                     Foreground="{DynamicResource TextPrimary}" />
 
           <!-- Request name -->
           <StackPanel Spacing="6">
-            <TextBlock Text="Request Name" FontSize="12" Foreground="#AAAACC" />
+            <TextBlock Text="Request Name" FontSize="12" Foreground="{DynamicResource TextMuted}" />
             <TextBox Text="{Binding SaveRequestName}"
                      Padding="10,8"
                      FontSize="13" />
@@ -685,12 +705,12 @@
 
           <!-- Collection selection -->
           <StackPanel Spacing="6">
-            <TextBlock Text="Save to Collection / Folder" FontSize="12" Foreground="#AAAACC" />
+            <TextBlock Text="Save to Collection / Folder" FontSize="12" Foreground="{DynamicResource TextMuted}" />
             <ListBox ItemsSource="{Binding FlatSaveTargets}"
                      SelectedItem="{Binding SelectedSaveTarget}"
                      MaxHeight="200"
-                     Background="#1E1E2E"
-                     BorderBrush="#3A3A5A"
+                     Background="{DynamicResource SidebarBg}"
+                     BorderBrush="{DynamicResource BorderColor}"
                      BorderThickness="1">
               <ListBox.ItemTemplate>
                 <DataTemplate x:DataType="vm:CollectionTreeNodeViewModel">
@@ -704,8 +724,8 @@
 
           <!-- Buttons -->
           <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
-            <Button Background="#333355"
-                    Foreground="#CCCCDD"
+            <Button Background="{DynamicResource BtnSecondaryBg}"
+                    Foreground="{DynamicResource TextSecondary}"
                     BorderThickness="0"
                     Padding="16,8"
                     CornerRadius="4"

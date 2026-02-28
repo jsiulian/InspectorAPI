@@ -1,7 +1,7 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="InspectorAPI.Desktop.App"
-             RequestedThemeVariant="Dark">
+             RequestedThemeVariant="Default">
 
   <Application.Styles>
     <FluentTheme />
@@ -9,20 +9,77 @@
 
   <Application.Resources>
     <ResourceDictionary>
-      <!-- Method badge colors -->
-      <SolidColorBrush x:Key="GetMethodBrush" Color="#61AFFE" />
-      <SolidColorBrush x:Key="PostMethodBrush" Color="#49CC90" />
-      <SolidColorBrush x:Key="PutMethodBrush" Color="#FCA130" />
-      <SolidColorBrush x:Key="DeleteMethodBrush" Color="#F93E3E" />
-      <SolidColorBrush x:Key="PatchMethodBrush" Color="#50E3C2" />
-      <SolidColorBrush x:Key="HeadMethodBrush" Color="#9012FE" />
+      <ResourceDictionary.ThemeDictionaries>
+
+        <ResourceDictionary x:Key="Dark">
+          <!-- Backgrounds -->
+          <SolidColorBrush x:Key="AppBg"        Color="#1A1A2A" />
+          <SolidColorBrush x:Key="SidebarBg"    Color="#1E1E2E" />
+          <SolidColorBrush x:Key="HeaderBg"     Color="#161626" />
+          <SolidColorBrush x:Key="TabbarBg"     Color="#252535" />
+          <SolidColorBrush x:Key="InputBg"      Color="#2A2A3A" />
+          <SolidColorBrush x:Key="SelectionBg"  Color="#2A2A4A" />
+          <SolidColorBrush x:Key="HoverBg"      Color="#2A2A3A" />
+          <SolidColorBrush x:Key="DialogBg"     Color="#252535" />
+          <!-- Borders -->
+          <SolidColorBrush x:Key="BorderColor"       Color="#3A3A5A" />
+          <SolidColorBrush x:Key="ButtonBorderColor" Color="#4A4A7A" />
+          <SolidColorBrush x:Key="DialogBorderColor" Color="#5A5A8A" />
+          <!-- Buttons -->
+          <SolidColorBrush x:Key="BtnSecondaryBg" Color="#333355" />
+          <SolidColorBrush x:Key="DisabledBg"     Color="#444466" />
+          <!-- Text -->
+          <SolidColorBrush x:Key="TextPrimary"    Color="#DDDDEE" />
+          <SolidColorBrush x:Key="TextSecondary"  Color="#CCCCDD" />
+          <SolidColorBrush x:Key="TextMuted"      Color="#AAAACC" />
+          <SolidColorBrush x:Key="TextFaint"      Color="#888899" />
+          <SolidColorBrush x:Key="TextVeryFaint"  Color="#666677" />
+          <SolidColorBrush x:Key="TextLabel"      Color="#7777AA" />
+          <SolidColorBrush x:Key="TextHeaderKey"  Color="#9090BB" />
+          <!-- Misc -->
+          <SolidColorBrush x:Key="TextSelectionBrush" Color="#4A4A8A" />
+        </ResourceDictionary>
+
+        <ResourceDictionary x:Key="Light">
+          <!-- Backgrounds -->
+          <SolidColorBrush x:Key="AppBg"        Color="#F5F5FA" />
+          <SolidColorBrush x:Key="SidebarBg"    Color="#EEEEF8" />
+          <SolidColorBrush x:Key="HeaderBg"     Color="#E4E4F0" />
+          <SolidColorBrush x:Key="TabbarBg"     Color="#E8E8F5" />
+          <SolidColorBrush x:Key="InputBg"      Color="#FFFFFF" />
+          <SolidColorBrush x:Key="SelectionBg"  Color="#E0E0F5" />
+          <SolidColorBrush x:Key="HoverBg"      Color="#E8E8FF" />
+          <SolidColorBrush x:Key="DialogBg"     Color="#F0F0FA" />
+          <!-- Borders -->
+          <SolidColorBrush x:Key="BorderColor"       Color="#CACADE" />
+          <SolidColorBrush x:Key="ButtonBorderColor" Color="#AAAABE" />
+          <SolidColorBrush x:Key="DialogBorderColor" Color="#9999BB" />
+          <!-- Buttons -->
+          <SolidColorBrush x:Key="BtnSecondaryBg" Color="#DCDCF0" />
+          <SolidColorBrush x:Key="DisabledBg"     Color="#BBBBCC" />
+          <!-- Text -->
+          <SolidColorBrush x:Key="TextPrimary"    Color="#1A1A2A" />
+          <SolidColorBrush x:Key="TextSecondary"  Color="#2A2A4A" />
+          <SolidColorBrush x:Key="TextMuted"      Color="#4444AA" />
+          <SolidColorBrush x:Key="TextFaint"      Color="#666688" />
+          <SolidColorBrush x:Key="TextVeryFaint"  Color="#888899" />
+          <SolidColorBrush x:Key="TextLabel"      Color="#5555AA" />
+          <SolidColorBrush x:Key="TextHeaderKey"  Color="#4040AA" />
+          <!-- Misc -->
+          <SolidColorBrush x:Key="TextSelectionBrush" Color="#B8B8EE" />
+        </ResourceDictionary>
+
+      </ResourceDictionary.ThemeDictionaries>
+
+      <!-- Method badge colors — theme-independent -->
+      <SolidColorBrush x:Key="GetMethodBrush"     Color="#61AFFE" />
+      <SolidColorBrush x:Key="PostMethodBrush"    Color="#49CC90" />
+      <SolidColorBrush x:Key="PutMethodBrush"     Color="#FCA130" />
+      <SolidColorBrush x:Key="DeleteMethodBrush"  Color="#F93E3E" />
+      <SolidColorBrush x:Key="PatchMethodBrush"   Color="#50E3C2" />
+      <SolidColorBrush x:Key="HeadMethodBrush"    Color="#9012FE" />
       <SolidColorBrush x:Key="OptionsMethodBrush" Color="#0D5AA7" />
 
-      <SolidColorBrush x:Key="SidebarBackground" Color="#1E1E2E" />
-      <SolidColorBrush x:Key="ContentBackground" Color="#252535" />
-      <SolidColorBrush x:Key="ToolbarBackground" Color="#1A1A2A" />
-      <SolidColorBrush x:Key="BorderBrush" Color="#3A3A5A" />
-      <SolidColorBrush x:Key="AccentBrush" Color="#7C6AF7" />
     </ResourceDictionary>
   </Application.Resources>
 

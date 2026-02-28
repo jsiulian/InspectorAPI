@@ -5,6 +5,7 @@ public class HttpResponseModel
     public int StatusCode { get; set; }
     public string StatusText { get; set; } = string.Empty;
     public Dictionary<string, string> Headers { get; set; } = [];
+    public Dictionary<string, string> SentRequestHeaders { get; set; } = [];
     public string Body { get; set; } = string.Empty;
     public long ElapsedMilliseconds { get; set; }
     public long BodySizeBytes { get; set; }

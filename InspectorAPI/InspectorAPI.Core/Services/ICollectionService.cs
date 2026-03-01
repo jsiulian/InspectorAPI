@@ -14,4 +14,6 @@ public interface ICollectionService
     Task DeleteFolderAsync(Guid collectionId, Guid? parentFolderId, Guid folderId);
     Task RenameFolderAsync(Guid collectionId, Guid folderId, string newName);
     Task RenameRequestAsync(Guid collectionId, Guid? folderId, Guid requestId, string newName);
+    Task<Collection?> ImportFromJsonAsync(string json);
+    Task ExportToFileAsync(Guid collectionId, string path, bool asPostman);
 }

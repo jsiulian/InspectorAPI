@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Text.Json;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using InspectorAPI.Core.Models;
@@ -32,6 +33,9 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty] private bool _isDeleteDialogOpen;
     [ObservableProperty] private string _deleteDialogNodeName = string.Empty;
     private Func<Task>? _pendingDeleteAction;
+
+    // Set by the View — opens a save-file dialog and returns the chosen path (or null if cancelled)
+    public Func<string, Task<string?>>? PickSaveFilePath { get; set; }
 
     public MainViewModel(ICollectionService collectionService, IHttpRequestService httpRequestService)
     {
@@ -94,6 +98,8 @@ public partial class MainViewModel : ViewModelBase
         Tabs.Remove(tab);
         if (Tabs.Count > 0)
             SelectedTab = Tabs[Math.Max(0, index - 1)];
+        else
+            SelectedTab = null;
     }
 
     [RelayCommand]
@@ -212,7 +218,9 @@ public partial class MainViewModel : ViewModelBase
             ParentCollectionId = col.Id,
             IsExpanded = false
         };
-        node.SetActions(null, n => ShowDeleteConfirmation(n), n => NewFolderOnNode(n), n => RenameNode(n), n => NewRequestOnNode(n));
+        node.SetActions(null, n => ShowDeleteConfirmation(n), n => NewFolderOnNode(n), n => RenameNode(n), n => NewRequestOnNode(n),
+            n => _ = ExportCollectionAsync(n, asPostman: false),
+            n => _ = ExportCollectionAsync(n, asPostman: true));
 
         foreach (var folder in col.Folders)
             node.Children.Add(BuildFolderNode(folder, col.Id, null));
@@ -362,5 +370,27 @@ public partial class MainViewModel : ViewModelBase
             if (RemoveNodeFromTree(node.Children, target)) return true;
         }
         return false;
+    }
+
+    [RelayCommand]
+    public async Task ImportCollection(string json)
+    {
+        try
+        {
+            var col = await _collectionService.ImportFromJsonAsync(json);
+            if (col is not null)
+                CollectionTree.Add(BuildCollectionNode(col));
+        }
+        catch { /* ignore parse errors */ }
+    }
+
+    private async Task ExportCollectionAsync(CollectionTreeNodeViewModel node, bool asPostman)
+    {
+        if (PickSaveFilePath is null || node.Collection is null) return;
+        var safeName = node.Collection.Name.Replace(" ", "_");
+        var suggestedName = asPostman ? $"{safeName}_postman.json" : $"{safeName}.json";
+        var path = await PickSaveFilePath(suggestedName);
+        if (path is null) return;
+        await _collectionService.ExportToFileAsync(node.Collection.Id, path, asPostman);
     }
 }

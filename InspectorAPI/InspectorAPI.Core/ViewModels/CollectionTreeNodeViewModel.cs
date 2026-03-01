@@ -33,6 +33,8 @@ public partial class CollectionTreeNodeViewModel : ViewModelBase
     private Action<CollectionTreeNodeViewModel>? _newFolderAction;
     private Action<CollectionTreeNodeViewModel>? _renameAction;
     private Action<CollectionTreeNodeViewModel>? _newRequestAction;
+    private Action<CollectionTreeNodeViewModel>? _exportNativeAction;
+    private Action<CollectionTreeNodeViewModel>? _exportPostmanAction;
 
     // Computed visibility helpers (used in AXAML without converters)
     public bool IsRequest => NodeType == CollectionNodeType.Request;
@@ -54,13 +56,17 @@ public partial class CollectionTreeNodeViewModel : ViewModelBase
         Action<CollectionTreeNodeViewModel>? deleteAction,
         Action<CollectionTreeNodeViewModel>? newFolderAction,
         Action<CollectionTreeNodeViewModel>? renameAction,
-        Action<CollectionTreeNodeViewModel>? newRequestAction = null)
+        Action<CollectionTreeNodeViewModel>? newRequestAction = null,
+        Action<CollectionTreeNodeViewModel>? exportNativeAction = null,
+        Action<CollectionTreeNodeViewModel>? exportPostmanAction = null)
     {
         _openAction = openAction;
         _deleteAction = deleteAction;
         _newFolderAction = newFolderAction;
         _renameAction = renameAction;
         _newRequestAction = newRequestAction;
+        _exportNativeAction = exportNativeAction;
+        _exportPostmanAction = exportPostmanAction;
     }
 
     [RelayCommand]
@@ -77,4 +83,10 @@ public partial class CollectionTreeNodeViewModel : ViewModelBase
 
     [RelayCommand]
     private void NewRequest() => _newRequestAction?.Invoke(this);
+
+    [RelayCommand]
+    private void ExportNative() => _exportNativeAction?.Invoke(this);
+
+    [RelayCommand]
+    private void ExportPostman() => _exportPostmanAction?.Invoke(this);
 }

@@ -167,4 +167,58 @@ public class CollectionService : ICollectionService
         }
         return null;
     }
+
+    public async Task<Collection?> ImportFromJsonAsync(string json)
+    {
+        Collection? col;
+        if (json.Contains("schema.getpostman.com"))
+            col = PostmanConverter.FromPostman(json);
+        else
+            col = JsonSerializer.Deserialize<Collection>(json, JsonOptions);
+
+        if (col is null) return null;
+
+        var imported = RegenerateIds(col);
+        await SaveCollectionAsync(imported);
+        return imported;
+    }
+
+    public async Task ExportToFileAsync(Guid collectionId, string path, bool asPostman)
+    {
+        if (asPostman)
+        {
+            var col = await GetCollectionAsync(collectionId);
+            if (col is null) return;
+            var json = PostmanConverter.ToPostman(col);
+            await File.WriteAllTextAsync(path, json);
+        }
+        else
+        {
+            var src = Path.Combine(StorageDir, $"{collectionId}.json");
+            if (File.Exists(src)) File.Copy(src, path, overwrite: true);
+        }
+    }
+
+    private async Task<Collection?> GetCollectionAsync(Guid id)
+    {
+        var file = Path.Combine(StorageDir, $"{id}.json");
+        if (!File.Exists(file)) return null;
+        var json = await File.ReadAllTextAsync(file);
+        return JsonSerializer.Deserialize<Collection>(json, JsonOptions);
+    }
+
+    private static Collection RegenerateIds(Collection col) => new()
+    {
+        Name = col.Name,
+        Description = col.Description,
+        Requests = col.Requests.Select(r => new SavedRequest { Name = r.Name, Request = r.Request }).ToList(),
+        Folders = col.Folders.Select(RegenerateFolderIds).ToList()
+    };
+
+    private static CollectionFolder RegenerateFolderIds(CollectionFolder f) => new()
+    {
+        Name = f.Name,
+        Requests = f.Requests.Select(r => new SavedRequest { Name = r.Name, Request = r.Request }).ToList(),
+        Folders = f.Folders.Select(RegenerateFolderIds).ToList()
+    };
 }

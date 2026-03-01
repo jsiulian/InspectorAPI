@@ -1,5 +1,7 @@
+using System.IO;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Platform.Storage;
 using InspectorAPI.Core.ViewModels;
 
 namespace InspectorAPI.Desktop.Views;
@@ -10,6 +12,42 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         KeyDown += OnWindowKeyDown;
+
+        Opened += (_, _) =>
+        {
+            if (DataContext is not MainViewModel vm) return;
+
+            vm.PickSaveFilePath = async suggestedName =>
+            {
+                var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+                {
+                    Title = "Export Collection",
+                    SuggestedFileName = suggestedName,
+                    FileTypeChoices = [new FilePickerFileType("JSON") { Patterns = ["*.json"] }]
+                });
+                return file?.TryGetLocalPath();
+            };
+        };
+    }
+
+    private async void OnImportClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (DataContext is not MainViewModel vm) return;
+
+        var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Import Collection",
+            AllowMultiple = false,
+            FileTypeFilter = [new FilePickerFileType("JSON") { Patterns = ["*.json"] }]
+        });
+
+        if (files.Count == 0) return;
+
+        var localPath = files[0].TryGetLocalPath();
+        if (localPath is null) return;
+
+        var json = await File.ReadAllTextAsync(localPath);
+        await vm.ImportCollectionCommand.ExecuteAsync(json);
     }
 
     // Enter/Esc shortcuts for all dialogs — handled at window level so focus

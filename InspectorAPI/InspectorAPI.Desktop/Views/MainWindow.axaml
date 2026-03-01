@@ -196,6 +196,11 @@
                      LetterSpacing="1" />
           <Button Grid.Column="1"
                   Classes="sidebar-btn"
+                  Click="OnImportClick"
+                  ToolTip.Tip="Import Collection (Native JSON or Postman)"
+                  FontSize="14" Padding="4,0">⬇</Button>
+          <Button Grid.Column="2"
+                  Classes="sidebar-btn"
                   Command="{Binding NewCollectionCommand}"
                   ToolTip.Tip="New Collection"
                   FontSize="18" Padding="4,0">+</Button>
@@ -227,6 +232,13 @@
                               IsVisible="{Binding IsCollectionOrFolder}" />
                     <MenuItem Header="Rename"
                               Command="{Binding RenameCommand}" />
+                    <Separator IsVisible="{Binding IsCollection}" />
+                    <MenuItem Header="Export (Native JSON)"
+                              Command="{Binding ExportNativeCommand}"
+                              IsVisible="{Binding IsCollection}" />
+                    <MenuItem Header="Export (Postman v2.1)"
+                              Command="{Binding ExportPostmanCommand}"
+                              IsVisible="{Binding IsCollection}" />
                     <Separator />
                     <MenuItem Header="Delete"
                               Command="{Binding DeleteCommand}"
@@ -508,6 +520,20 @@
                       </TextBlock>
                     </StackPanel>
                   </Border>
+                </TabItem>
+
+                <!-- Raw request preview (read-only) -->
+                <TabItem Header="Raw">
+                  <TextBox Text="{Binding RequestRaw}"
+                           IsReadOnly="True"
+                           AcceptsReturn="True"
+                           TextWrapping="NoWrap"
+                           FontFamily="Consolas,Courier New,monospace"
+                           FontSize="12"
+                           Padding="12"
+                           Background="{DynamicResource AppBg}"
+                           BorderThickness="0"
+                           Foreground="{DynamicResource TextPrimary}" />
                 </TabItem>
 
               </TabControl>

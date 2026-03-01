@@ -32,12 +32,18 @@ public partial class RequestTabViewModel : ViewModelBase
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(TabTitle))]
+    [NotifyPropertyChangedFor(nameof(RequestRaw))]
     private string _url = string.Empty;
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(TabTitle))]
+    [NotifyPropertyChangedFor(nameof(RequestRaw))]
     private string _selectedMethod = "GET";
-    [ObservableProperty] private string _bodyContent = string.Empty;
-    [ObservableProperty] private string _selectedBodyContentType = "application/json";
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(RequestRaw))]
+    private string _bodyContent = string.Empty;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(RequestRaw))]
+    private string _selectedBodyContentType = "application/json";
 
     // State
     [ObservableProperty] private bool _isSending;
@@ -82,6 +88,56 @@ public partial class RequestTabViewModel : ViewModelBase
         _closeAction = closeAction;
         _activateAction = activateAction;
         _saveDialogAction = saveDialogAction;
+
+        Headers.CollectionChanged += (_, e) =>
+        {
+            if (e.NewItems != null)
+                foreach (HeaderItemViewModel h in e.NewItems)
+                    h.PropertyChanged += (_, _) => OnPropertyChanged(nameof(RequestRaw));
+            OnPropertyChanged(nameof(RequestRaw));
+        };
+        QueryParams.CollectionChanged += (_, e) =>
+        {
+            if (e.NewItems != null)
+                foreach (HeaderItemViewModel p in e.NewItems)
+                    p.PropertyChanged += (_, _) => OnPropertyChanged(nameof(RequestRaw));
+            OnPropertyChanged(nameof(RequestRaw));
+        };
+    }
+
+    public string RequestRaw
+    {
+        get
+        {
+            var sb = new System.Text.StringBuilder();
+
+            var enabledParams = QueryParams.Where(p => p.IsEnabled && !string.IsNullOrWhiteSpace(p.Key)).ToList();
+            var url = Url;
+            if (enabledParams.Count > 0)
+            {
+                var qs = string.Join("&", enabledParams.Select(
+                    p => Uri.EscapeDataString(p.Key) + "=" + Uri.EscapeDataString(p.Value ?? string.Empty)));
+                url = url.Contains('?') ? url + "&" + qs : url + "?" + qs;
+            }
+
+            sb.AppendLine($"{SelectedMethod} {url} HTTP/1.1");
+
+            if (Uri.TryCreate(Url, UriKind.Absolute, out var uri))
+                sb.AppendLine($"Host: {uri.Host}");
+
+            if (!string.IsNullOrWhiteSpace(BodyContent))
+                sb.AppendLine($"Content-Type: {SelectedBodyContentType}");
+
+            foreach (var h in Headers.Where(h => h.IsEnabled && !string.IsNullOrWhiteSpace(h.Key)))
+                sb.AppendLine($"{h.Key}: {h.Value}");
+
+            sb.AppendLine();
+
+            if (!string.IsNullOrWhiteSpace(BodyContent))
+                sb.Append(BodyContent);
+
+            return sb.ToString();
+        }
     }
 
     // Load from a saved request

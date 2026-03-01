@@ -124,6 +124,10 @@
       <Setter Property="VerticalContentAlignment" Value="Center"></Setter>
     </Style>
 
+    <Style Selector="TextBox[AcceptsReturn=True]">
+      <Setter Property="VerticalContentAlignment" Value="Top"></Setter>
+    </Style>
+    
     <!-- ComboBox base -->
     <Style Selector="ComboBox">
       <Setter Property="Background" Value="{DynamicResource InputBg}" />
@@ -486,7 +490,6 @@
                              Padding="12"
                              Background="{DynamicResource AppBg}"
                              BorderThickness="0"
-                             VerticalContentAlignment="Top"
                              Watermark="Request body (JSON, XML, text…)" />
                   </Grid>
                 </TabItem>

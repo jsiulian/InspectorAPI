@@ -298,7 +298,7 @@
                       <TextBlock Text="{Binding SelectedMethod}"
                                  FontSize="10" FontWeight="Bold"
                                  VerticalAlignment="Center"
-                                 Foreground="#61AFFE" />
+                                 Foreground="{Binding SelectedMethod, Converter={x:Static conv:MethodBrushConverter.Instance}}" />
                       <TextBlock Text="{Binding TabTitle}"
                                  Classes="tab-title"
                                  MaxWidth="140"

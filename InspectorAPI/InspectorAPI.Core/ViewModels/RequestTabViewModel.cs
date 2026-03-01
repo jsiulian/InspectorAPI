@@ -112,18 +112,29 @@ public partial class RequestTabViewModel : ViewModelBase
             var sb = new System.Text.StringBuilder();
 
             var enabledParams = QueryParams.Where(p => p.IsEnabled && !string.IsNullOrWhiteSpace(p.Key)).ToList();
-            var url = Url;
+
+            // Build the full URL first so we can extract path+query for the request line
+            var fullUrl = Url;
             if (enabledParams.Count > 0)
             {
                 var qs = string.Join("&", enabledParams.Select(
                     p => Uri.EscapeDataString(p.Key) + "=" + Uri.EscapeDataString(p.Value ?? string.Empty)));
-                url = url.Contains('?') ? url + "&" + qs : url + "?" + qs;
+                fullUrl = fullUrl.Contains('?') ? fullUrl + "&" + qs : fullUrl + "?" + qs;
             }
 
-            sb.AppendLine($"{SelectedMethod} {url} HTTP/1.1");
-
-            if (Uri.TryCreate(Url, UriKind.Absolute, out var uri))
-                sb.AppendLine($"Host: {uri.Host}");
+            // Request line: use relative path+query if the URL is absolute, otherwise raw value
+            string requestTarget;
+            if (Uri.TryCreate(fullUrl, UriKind.Absolute, out var parsedUri))
+            {
+                requestTarget = parsedUri.PathAndQuery;
+                if (string.IsNullOrEmpty(requestTarget)) requestTarget = "/";
+                sb.AppendLine($"{SelectedMethod} {requestTarget} HTTP/1.1");
+                sb.AppendLine($"Host: {parsedUri.Host}{(parsedUri.IsDefaultPort ? "" : ":" + parsedUri.Port)}");
+            }
+            else
+            {
+                sb.AppendLine($"{SelectedMethod} {fullUrl} HTTP/1.1");
+            }
 
             if (!string.IsNullOrWhiteSpace(BodyContent))
                 sb.AppendLine($"Content-Type: {SelectedBodyContentType}");

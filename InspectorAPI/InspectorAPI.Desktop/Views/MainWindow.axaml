@@ -5,7 +5,7 @@
         x:Class="InspectorAPI.Desktop.Views.MainWindow"
         x:DataType="vm:MainViewModel"
         Title="InspectorAPI"
-        Icon="avares://InspectorAPI/Assets/icon.png"
+        Icon="avares://InspectorAPI/Assets/icon.ico"
         Width="1280" Height="800"
         MinWidth="900" MinHeight="600"
         Background="{DynamicResource AppBg}">
@@ -172,16 +172,6 @@
       <Setter Property="Foreground" Value="#0D5AA7" />
     </Style>
 
-    <!-- Hover action buttons: always hold their column width, revealed via opacity -->
-    <Style Selector="StackPanel.hover-actions">
-      <Setter Property="Opacity" Value="0" />
-      <Setter Property="IsHitTestVisible" Value="False" />
-    </Style>
-    <Style Selector="TreeViewItem:pointerover StackPanel.hover-actions">
-      <Setter Property="Opacity" Value="1" />
-      <Setter Property="IsHitTestVisible" Value="True" />
-    </Style>
-
   </Window.Styles>
 
   <Grid ColumnDefinitions="280,4,*">
@@ -215,7 +205,24 @@
           <TreeView.ItemTemplate>
             <TreeDataTemplate x:DataType="vm:CollectionTreeNodeViewModel"
                               ItemsSource="{Binding Children}">
-              <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,1">
+              <Grid ColumnDefinitions="Auto,*" Margin="0,1">
+
+                <Grid.ContextMenu>
+                  <ContextMenu>
+                    <MenuItem Header="Open in Tab"
+                              Command="{Binding OpenCommand}"
+                              IsVisible="{Binding IsRequest}" />
+                    <MenuItem Header="New Folder"
+                              Command="{Binding NewFolderCommand}"
+                              IsVisible="{Binding IsCollectionOrFolder}" />
+                    <MenuItem Header="Rename"
+                              Command="{Binding RenameCommand}" />
+                    <Separator />
+                    <MenuItem Header="Delete"
+                              Command="{Binding DeleteCommand}"
+                              Foreground="#F93E3E" />
+                  </ContextMenu>
+                </Grid.ContextMenu>
 
                 <!-- Icon / method badge -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Spacing="4">
@@ -237,28 +244,6 @@
                            Margin="4,0"
                            TextTrimming="CharacterEllipsis" />
 
-                <!-- Hover action buttons — always occupy space, revealed via opacity -->
-                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="2"
-                            Classes="hover-actions">
-                  <!-- Open request -->
-                  <Button Classes="sidebar-btn"
-                          Command="{Binding OpenCommand}"
-                          IsVisible="{Binding IsRequest}"
-                          ToolTip.Tip="Open in tab" FontSize="10">→</Button>
-                  <!-- New folder -->
-                  <Button Classes="sidebar-btn"
-                          Command="{Binding NewFolderCommand}"
-                          IsVisible="{Binding IsCollectionOrFolder}"
-                          ToolTip.Tip="New folder" FontSize="10">📁</Button>
-                  <!-- Rename -->
-                  <Button Classes="sidebar-btn"
-                          Command="{Binding RenameCommand}"
-                          ToolTip.Tip="Rename" FontSize="10">✎</Button>
-                  <!-- Delete -->
-                  <Button Classes="sidebar-btn"
-                          Command="{Binding DeleteCommand}"
-                          ToolTip.Tip="Delete" FontSize="10">🗑</Button>
-                </StackPanel>
               </Grid>
             </TreeDataTemplate>
           </TreeView.ItemTemplate>
@@ -583,14 +568,14 @@
                         <ItemsControl.ItemTemplate>
                           <DataTemplate x:DataType="vm:HeaderItemViewModel">
                             <Grid ColumnDefinitions="*,*" Margin="0,2">
-                              <TextBlock Grid.Column="0"
+                              <SelectableTextBlock Grid.Column="0"
                                          Text="{Binding Key}"
                                          FontWeight="SemiBold"
                                          FontSize="12"
                                          Foreground="{DynamicResource TextHeaderKey}"
                                          FontFamily="Consolas,monospace"
                                          TextWrapping="Wrap" />
-                              <TextBlock Grid.Column="1"
+                              <SelectableTextBlock Grid.Column="1"
                                          Text="{Binding Value}"
                                          FontSize="12"
                                          Foreground="{DynamicResource TextSecondary}"

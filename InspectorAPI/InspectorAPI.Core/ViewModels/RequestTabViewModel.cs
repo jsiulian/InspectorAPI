@@ -13,7 +13,11 @@ public partial class RequestTabViewModel : ViewModelBase
     private readonly Action<RequestTabViewModel> _closeAction;
     private readonly Action<RequestTabViewModel>? _activateAction;
     private readonly Action<RequestTabViewModel>? _saveDialogAction;
+    private readonly Action<RequestTabViewModel>? _duplicateAction;
     private CancellationTokenSource? _cts;
+
+    // Prevents re-entrant URL ↔ QueryParams sync
+    private bool _syncingUrl;
 
     public static readonly string[] HttpMethods = ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"];
     public static readonly string[] ContentTypes =
@@ -103,7 +107,9 @@ public partial class RequestTabViewModel : ViewModelBase
         {
             if (SavedRequestId.HasValue) return Name;
             if (string.IsNullOrWhiteSpace(Url)) return Name;
-            return Uri.TryCreate(Url, UriKind.Absolute, out var uri) ? uri.Host : Url;
+            var qIdx = Url.IndexOf('?');
+            var baseUrl = qIdx >= 0 ? Url[..qIdx] : Url;
+            return Uri.TryCreate(baseUrl, UriKind.Absolute, out var uri) ? uri.Host : baseUrl;
         }
     }
 
@@ -111,12 +117,14 @@ public partial class RequestTabViewModel : ViewModelBase
         IHttpRequestService httpRequestService,
         Action<RequestTabViewModel> closeAction,
         Action<RequestTabViewModel>? activateAction = null,
-        Action<RequestTabViewModel>? saveDialogAction = null)
+        Action<RequestTabViewModel>? saveDialogAction = null,
+        Action<RequestTabViewModel>? duplicateAction = null)
     {
         _httpRequestService = httpRequestService;
         _closeAction = closeAction;
         _activateAction = activateAction;
         _saveDialogAction = saveDialogAction;
+        _duplicateAction = duplicateAction;
 
         Headers.CollectionChanged += (_, e) =>
         {
@@ -129,13 +137,85 @@ public partial class RequestTabViewModel : ViewModelBase
         {
             if (e.NewItems != null)
                 foreach (HeaderItemViewModel p in e.NewItems)
+                {
                     p.PropertyChanged += (_, _) => OnPropertyChanged(nameof(RequestRaw));
+                    p.PropertyChanged += (_, _) => SyncUrlFromParams();
+                }
             OnPropertyChanged(nameof(RequestRaw));
+            SyncUrlFromParams();
         };
 
         // Default headers for new tabs
         Headers.Add(new HeaderItemViewModel(h => Headers.Remove(h)) { Key = "Accept", Value = "application/json" });
         Headers.Add(new HeaderItemViewModel(h => Headers.Remove(h)) { Key = "User-Agent", Value = "InspectorAPI" });
+    }
+
+    // Called by the toolkit when Url changes — syncs query params panel from the new URL
+    partial void OnUrlChanged(string value)
+    {
+        if (_syncingUrl) return;
+        _syncingUrl = true;
+        try { SyncParamsFromUrl(value); }
+        finally { _syncingUrl = false; }
+    }
+
+    // Merges the query string in 'url' into the QueryParams collection.
+    // Enabled params are updated to match; disabled params are left alone.
+    private void SyncParamsFromUrl(string url)
+    {
+        var qIdx = url.IndexOf('?');
+        var query = qIdx >= 0 ? url[(qIdx + 1)..] : string.Empty;
+
+        var urlParams = string.IsNullOrEmpty(query)
+            ? []
+            : query.Split('&', StringSplitOptions.RemoveEmptyEntries)
+                   .Select(p =>
+                   {
+                       var eq = p.IndexOf('=');
+                       return eq >= 0
+                           ? (Key: Uri.UnescapeDataString(p[..eq]), Value: Uri.UnescapeDataString(p[(eq + 1)..]))
+                           : (Key: Uri.UnescapeDataString(p), Value: "");
+                   }).ToList();
+
+        var urlParamKeys = urlParams.Select(p => p.Key).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        // Remove enabled params no longer present in the URL
+        for (int i = QueryParams.Count - 1; i >= 0; i--)
+        {
+            var param = QueryParams[i];
+            if (param.IsEnabled && !urlParamKeys.Contains(param.Key))
+                QueryParams.RemoveAt(i);
+        }
+
+        // Update existing or add new params from URL
+        foreach (var (key, value) in urlParams)
+        {
+            var existing = QueryParams.FirstOrDefault(p =>
+                p.IsEnabled && string.Equals(p.Key, key, StringComparison.OrdinalIgnoreCase));
+            if (existing is not null)
+                existing.Value = value;
+            else
+                QueryParams.Add(new HeaderItemViewModel(p => QueryParams.Remove(p)) { Key = key, Value = value, IsEnabled = true });
+        }
+    }
+
+    // Rebuilds the URL query string from the currently enabled QueryParams.
+    private void SyncUrlFromParams()
+    {
+        if (_syncingUrl) return;
+        _syncingUrl = true;
+        try
+        {
+            var qIdx = Url.IndexOf('?');
+            var baseUrl = qIdx >= 0 ? Url[..qIdx] : Url;
+
+            var enabled = QueryParams.Where(p => p.IsEnabled && !string.IsNullOrWhiteSpace(p.Key)).ToList();
+            Url = enabled.Count == 0
+                ? baseUrl
+                : baseUrl + "?" + string.Join("&", enabled.Select(
+                    p => Uri.EscapeDataString(p.Key) + "=" + Uri.EscapeDataString(p.Value ?? "")));
+        }
+        finally { _syncingUrl = false; }
     }
 
     public string RequestRaw
@@ -144,29 +224,17 @@ public partial class RequestTabViewModel : ViewModelBase
         {
             var sb = new System.Text.StringBuilder();
 
-            var enabledParams = QueryParams.Where(p => p.IsEnabled && !string.IsNullOrWhiteSpace(p.Key)).ToList();
-
-            // Build the full URL first so we can extract path+query for the request line
-            var fullUrl = Url;
-            if (enabledParams.Count > 0)
+            // Url already contains the enabled query params (kept in sync)
+            if (Uri.TryCreate(Url, UriKind.Absolute, out var parsedUri))
             {
-                var qs = string.Join("&", enabledParams.Select(
-                    p => Uri.EscapeDataString(p.Key) + "=" + Uri.EscapeDataString(p.Value ?? string.Empty)));
-                fullUrl = fullUrl.Contains('?') ? fullUrl + "&" + qs : fullUrl + "?" + qs;
-            }
-
-            // Request line: use relative path+query if the URL is absolute, otherwise raw value
-            string requestTarget;
-            if (Uri.TryCreate(fullUrl, UriKind.Absolute, out var parsedUri))
-            {
-                requestTarget = parsedUri.PathAndQuery;
+                var requestTarget = parsedUri.PathAndQuery;
                 if (string.IsNullOrEmpty(requestTarget)) requestTarget = "/";
                 sb.AppendLine($"{SelectedMethod} {requestTarget} HTTP/1.1");
                 sb.AppendLine($"Host: {parsedUri.Host}{(parsedUri.IsDefaultPort ? "" : ":" + parsedUri.Port)}");
             }
             else
             {
-                sb.AppendLine($"{SelectedMethod} {fullUrl} HTTP/1.1");
+                sb.AppendLine($"{SelectedMethod} {Url} HTTP/1.1");
             }
 
             if (!string.IsNullOrWhiteSpace(BodyContent))
@@ -187,27 +255,74 @@ public partial class RequestTabViewModel : ViewModelBase
     // Load from a saved request
     public void LoadFromSavedRequest(SavedRequest saved, Guid collectionId, Guid? folderId)
     {
-        SavedRequestId = saved.Id;
-        SavedCollectionId = collectionId;
-        SavedFolderId = folderId;
+        _syncingUrl = true;
+        try
+        {
+            SavedRequestId = saved.Id;
+            SavedCollectionId = collectionId;
+            SavedFolderId = folderId;
 
-        Name = saved.Name;
-        Url = saved.Request.Url;
-        SelectedMethod = saved.Request.Method;
-        BodyContent = saved.Request.Body;
-        SelectedBodyContentType = saved.Request.BodyContentType;
+            Name = saved.Name;
+            Url = saved.Request.Url;
+            SelectedMethod = saved.Request.Method;
+            BodyContent = saved.Request.Body;
+            SelectedBodyContentType = saved.Request.BodyContentType;
 
-        Headers.Clear();
-        foreach (var h in saved.Request.Headers)
-            Headers.Add(new HeaderItemViewModel(h => Headers.Remove(h)) { Key = h.Key, Value = h.Value, IsEnabled = h.IsEnabled });
+            Headers.Clear();
+            foreach (var h in saved.Request.Headers)
+                Headers.Add(new HeaderItemViewModel(h => Headers.Remove(h)) { Key = h.Key, Value = h.Value, IsEnabled = h.IsEnabled });
 
-        QueryParams.Clear();
-        foreach (var p in saved.Request.QueryParams)
-            QueryParams.Add(new HeaderItemViewModel(p => QueryParams.Remove(p)) { Key = p.Key, Value = p.Value, IsEnabled = p.IsEnabled });
+            QueryParams.Clear();
+            foreach (var p in saved.Request.QueryParams)
+                QueryParams.Add(new HeaderItemViewModel(p => QueryParams.Remove(p)) { Key = p.Key, Value = p.Value, IsEnabled = p.IsEnabled });
 
-        IsDirty = false;
+            IsDirty = false;
+        }
+        finally
+        {
+            _syncingUrl = false;
+        }
+
+        // Rebuild URL from enabled params (saved URL may be base-only)
+        SyncUrlFromParams();
     }
 
+    // Copies all request fields from another tab (used for duplication).
+    public void CopyFrom(RequestTabViewModel src)
+    {
+        _syncingUrl = true;
+        try
+        {
+            Name = $"Copy of {src.Name}";
+            Url = src.Url;
+            SelectedMethod = src.SelectedMethod;
+            BodyContent = src.BodyContent;
+            SelectedBodyContentType = src.SelectedBodyContentType;
+
+            Headers.Clear();
+            foreach (var h in src.Headers)
+                Headers.Add(new HeaderItemViewModel(h => Headers.Remove(h)) { Key = h.Key, Value = h.Value, IsEnabled = h.IsEnabled });
+
+            QueryParams.Clear();
+            foreach (var p in src.QueryParams)
+                QueryParams.Add(new HeaderItemViewModel(p => QueryParams.Remove(p)) { Key = p.Key, Value = p.Value, IsEnabled = p.IsEnabled });
+        }
+        finally
+        {
+            _syncingUrl = false;
+        }
+    }
+
+    // Records that this tab's content has been persisted (prevents duplicate saves).
+    public void MarkAsSaved(Guid requestId, Guid collectionId, Guid? folderId)
+    {
+        SavedRequestId = requestId;
+        SavedCollectionId = collectionId;
+        SavedFolderId = folderId;
+        OnPropertyChanged(nameof(TabTitle));
+    }
+
+    // For sending HTTP requests — URL already contains enabled query params.
     public HttpRequestModel ToRequestModel() => new()
     {
         Url = Url,
@@ -218,11 +333,28 @@ public partial class RequestTabViewModel : ViewModelBase
             .Where(h => h.IsEnabled && !string.IsNullOrWhiteSpace(h.Key))
             .Select(h => new HeaderItem { Key = h.Key, Value = h.Value, IsEnabled = h.IsEnabled })
             .ToList(),
-        QueryParams = QueryParams
-            .Where(p => p.IsEnabled && !string.IsNullOrWhiteSpace(p.Key))
-            .Select(p => new HeaderItem { Key = p.Key, Value = p.Value, IsEnabled = p.IsEnabled })
-            .ToList()
+        QueryParams = [] // params already embedded in Url
     };
+
+    // For saving to disk — stores base URL + all params (including disabled) separately.
+    public HttpRequestModel ToSaveModel()
+    {
+        var qIdx = Url.IndexOf('?');
+        var baseUrl = qIdx >= 0 ? Url[..qIdx] : Url;
+        return new HttpRequestModel
+        {
+            Url = baseUrl,
+            Method = SelectedMethod,
+            Body = BodyContent,
+            BodyContentType = SelectedBodyContentType,
+            Headers = Headers
+                .Select(h => new HeaderItem { Key = h.Key, Value = h.Value, IsEnabled = h.IsEnabled })
+                .ToList(),
+            QueryParams = QueryParams
+                .Select(p => new HeaderItem { Key = p.Key, Value = p.Value, IsEnabled = p.IsEnabled })
+                .ToList()
+        };
+    }
 
     [RelayCommand]
     private async Task SendRequest()
@@ -291,6 +423,9 @@ public partial class RequestTabViewModel : ViewModelBase
 
     [RelayCommand]
     private void OpenSaveDialog() => _saveDialogAction?.Invoke(this);
+
+    [RelayCommand]
+    private void Duplicate() => _duplicateAction?.Invoke(this);
 
     private string BuildRawView(InspectorAPI.Core.Models.HttpResponseModel response)
     {

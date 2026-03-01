@@ -49,10 +49,21 @@ public partial class MainViewModel : ViewModelBase
         AddNewTab();
     }
 
+    private RequestTabViewModel MakeTab() =>
+        new(_httpRequestService, CloseTab, t => SelectedTab = t, OpenSaveDialogForTab, DuplicateTab);
+
     [RelayCommand]
     private void AddNewTab()
     {
-        var tab = new RequestTabViewModel(_httpRequestService, CloseTab, t => SelectedTab = t, OpenSaveDialogForTab);
+        var tab = MakeTab();
+        Tabs.Add(tab);
+        SelectedTab = tab;
+    }
+
+    private void DuplicateTab(RequestTabViewModel source)
+    {
+        var tab = MakeTab();
+        tab.CopyFrom(source);
         Tabs.Add(tab);
         SelectedTab = tab;
     }
@@ -66,9 +77,28 @@ public partial class MainViewModel : ViewModelBase
     private void OpenSaveDialogForTab(RequestTabViewModel tab)
     {
         SelectedTab = tab;
+
+        // Already-saved request: update directly without reopening the dialog
+        if (tab.SavedRequestId.HasValue && tab.SavedCollectionId.HasValue)
+        {
+            _ = QuickSaveAsync(tab);
+            return;
+        }
+
         SaveRequestName = tab.Name;
         RebuildFlatSaveTargets();
         IsSaveDialogOpen = true;
+    }
+
+    private async Task QuickSaveAsync(RequestTabViewModel tab)
+    {
+        var saved = new SavedRequest
+        {
+            Id = tab.SavedRequestId!.Value,
+            Name = tab.Name,
+            Request = tab.ToSaveModel()
+        };
+        await _collectionService.UpdateRequestAsync(tab.SavedCollectionId!.Value, tab.SavedFolderId, saved);
     }
 
     private void RebuildFlatSaveTargets()
@@ -168,18 +198,20 @@ public partial class MainViewModel : ViewModelBase
         {
             Id = SelectedTab.SavedRequestId ?? Guid.NewGuid(),
             Name = string.IsNullOrWhiteSpace(SaveRequestName) ? SelectedTab.TabTitle : SaveRequestName,
-            Request = SelectedTab.ToRequestModel()
+            Request = SelectedTab.ToSaveModel()
         };
 
-        if (SelectedTab.SavedRequestId.HasValue)
-            await _collectionService.UpdateRequestAsync(collectionId, folderId, saved);
-        else
+        var wasNew = !SelectedTab.SavedRequestId.HasValue;
+
+        if (wasNew)
             await _collectionService.AddRequestToCollectionAsync(collectionId, folderId, saved);
+        else
+            await _collectionService.UpdateRequestAsync(collectionId, folderId, saved);
 
         SelectedTab.Name = saved.Name;
+        SelectedTab.MarkAsSaved(saved.Id, collectionId, folderId);
 
-        // Add to tree if new
-        if (!SelectedTab.SavedRequestId.HasValue)
+        if (wasNew)
         {
             var reqNode = BuildRequestNode(saved, collectionId, folderId);
             SelectedSaveTarget.Children.Add(reqNode);
@@ -272,7 +304,7 @@ public partial class MainViewModel : ViewModelBase
         if (node.SavedRequest is null) return;
         var existing = Tabs.FirstOrDefault(t => t.SavedRequestId == node.SavedRequest.Id);
         if (existing is not null) { SelectedTab = existing; return; }
-        var tab = new RequestTabViewModel(_httpRequestService, CloseTab, t => SelectedTab = t, OpenSaveDialogForTab);
+        var tab = MakeTab();
         tab.LoadFromSavedRequest(node.SavedRequest, node.ParentCollectionId!.Value, node.ParentFolderId);
         Tabs.Add(tab);
         SelectedTab = tab;
@@ -317,7 +349,7 @@ public partial class MainViewModel : ViewModelBase
 
     private void NewRequestOnNode(CollectionTreeNodeViewModel parent)
     {
-        var tab = new RequestTabViewModel(_httpRequestService, CloseTab, t => SelectedTab = t, OpenSaveDialogForTab);
+        var tab = MakeTab();
         Tabs.Add(tab);
         SelectedTab = tab;
 
@@ -345,6 +377,8 @@ public partial class MainViewModel : ViewModelBase
             else if (node.NodeType == CollectionNodeType.Request && node.SavedRequest is not null && node.ParentCollectionId is not null)
             {
                 await _collectionService.RenameRequestAsync(node.ParentCollectionId.Value, node.ParentFolderId, node.SavedRequest.Id, name);
+                // Keep in-memory model in sync so reopening the tab shows the new name
+                node.SavedRequest.Name = name;
                 var openTab = Tabs.FirstOrDefault(t => t.SavedRequestId == node.SavedRequest.Id);
                 if (openTab is not null) openTab.Name = name;
             }

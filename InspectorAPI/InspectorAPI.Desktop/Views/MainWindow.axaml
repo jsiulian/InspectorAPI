@@ -398,6 +398,18 @@
                           Margin="6,0,0,0"
                           Command="{Binding OpenSaveDialogCommand}">Save</Button>
 
+                  <!-- Duplicate tab button -->
+                  <Button Grid.Column="4"
+                          Background="{DynamicResource SelectionBg}"
+                          Foreground="{DynamicResource TextSecondary}"
+                          BorderThickness="1"
+                          BorderBrush="{DynamicResource ButtonBorderColor}"
+                          Padding="12,8"
+                          CornerRadius="4"
+                          Margin="6,0,0,0"
+                          ToolTip.Tip="Duplicate this tab"
+                          Command="{Binding DuplicateCommand}">⧉</Button>
+
                 </Grid>
               </Border>
 

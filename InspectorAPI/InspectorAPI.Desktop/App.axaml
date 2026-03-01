@@ -13,60 +13,60 @@
 
         <ResourceDictionary x:Key="Dark">
           <!-- Backgrounds -->
-          <SolidColorBrush x:Key="AppBg"        Color="#1A1A2A" />
-          <SolidColorBrush x:Key="SidebarBg"    Color="#1E1E2E" />
-          <SolidColorBrush x:Key="HeaderBg"     Color="#161626" />
-          <SolidColorBrush x:Key="TabbarBg"     Color="#252535" />
-          <SolidColorBrush x:Key="InputBg"      Color="#2A2A3A" />
-          <SolidColorBrush x:Key="SelectionBg"  Color="#2A2A4A" />
-          <SolidColorBrush x:Key="HoverBg"      Color="#2A2A3A" />
-          <SolidColorBrush x:Key="DialogBg"     Color="#252535" />
+          <SolidColorBrush x:Key="AppBg"        Color="#1A1A1A" />
+          <SolidColorBrush x:Key="SidebarBg"    Color="#1E1E1E" />
+          <SolidColorBrush x:Key="HeaderBg"     Color="#161616" />
+          <SolidColorBrush x:Key="TabbarBg"     Color="#252525" />
+          <SolidColorBrush x:Key="InputBg"      Color="#2A2A2A" />
+          <SolidColorBrush x:Key="SelectionBg"  Color="#2D2D2D" />
+          <SolidColorBrush x:Key="HoverBg"      Color="#2A2A2A" />
+          <SolidColorBrush x:Key="DialogBg"     Color="#252525" />
           <!-- Borders -->
-          <SolidColorBrush x:Key="BorderColor"       Color="#3A3A5A" />
-          <SolidColorBrush x:Key="ButtonBorderColor" Color="#4A4A7A" />
-          <SolidColorBrush x:Key="DialogBorderColor" Color="#5A5A8A" />
+          <SolidColorBrush x:Key="BorderColor"       Color="#3A3A3A" />
+          <SolidColorBrush x:Key="ButtonBorderColor" Color="#4A4A4A" />
+          <SolidColorBrush x:Key="DialogBorderColor" Color="#5A5A5A" />
           <!-- Buttons -->
-          <SolidColorBrush x:Key="BtnSecondaryBg" Color="#333355" />
-          <SolidColorBrush x:Key="DisabledBg"     Color="#444466" />
+          <SolidColorBrush x:Key="BtnSecondaryBg" Color="#333333" />
+          <SolidColorBrush x:Key="DisabledBg"     Color="#444444" />
           <!-- Text -->
-          <SolidColorBrush x:Key="TextPrimary"    Color="#DDDDEE" />
-          <SolidColorBrush x:Key="TextSecondary"  Color="#CCCCDD" />
-          <SolidColorBrush x:Key="TextMuted"      Color="#AAAACC" />
-          <SolidColorBrush x:Key="TextFaint"      Color="#888899" />
-          <SolidColorBrush x:Key="TextVeryFaint"  Color="#666677" />
-          <SolidColorBrush x:Key="TextLabel"      Color="#7777AA" />
-          <SolidColorBrush x:Key="TextHeaderKey"  Color="#9090BB" />
+          <SolidColorBrush x:Key="TextPrimary"    Color="#DDDDDD" />
+          <SolidColorBrush x:Key="TextSecondary"  Color="#CCCCCC" />
+          <SolidColorBrush x:Key="TextMuted"      Color="#AAAAAA" />
+          <SolidColorBrush x:Key="TextFaint"      Color="#888888" />
+          <SolidColorBrush x:Key="TextVeryFaint"  Color="#666666" />
+          <SolidColorBrush x:Key="TextLabel"      Color="#777777" />
+          <SolidColorBrush x:Key="TextHeaderKey"  Color="#909090" />
           <!-- Misc -->
-          <SolidColorBrush x:Key="TextSelectionBrush" Color="#4A4A8A" />
+          <SolidColorBrush x:Key="TextSelectionBrush" Color="#4A4A4A" />
         </ResourceDictionary>
 
         <ResourceDictionary x:Key="Light">
           <!-- Backgrounds -->
-          <SolidColorBrush x:Key="AppBg"        Color="#F5F5FA" />
-          <SolidColorBrush x:Key="SidebarBg"    Color="#EEEEF8" />
-          <SolidColorBrush x:Key="HeaderBg"     Color="#E4E4F0" />
-          <SolidColorBrush x:Key="TabbarBg"     Color="#E8E8F5" />
+          <SolidColorBrush x:Key="AppBg"        Color="#F5F5F5" />
+          <SolidColorBrush x:Key="SidebarBg"    Color="#EEEEEE" />
+          <SolidColorBrush x:Key="HeaderBg"     Color="#E4E4E4" />
+          <SolidColorBrush x:Key="TabbarBg"     Color="#E8E8E8" />
           <SolidColorBrush x:Key="InputBg"      Color="#FFFFFF" />
-          <SolidColorBrush x:Key="SelectionBg"  Color="#E0E0F5" />
-          <SolidColorBrush x:Key="HoverBg"      Color="#E8E8FF" />
-          <SolidColorBrush x:Key="DialogBg"     Color="#F0F0FA" />
+          <SolidColorBrush x:Key="SelectionBg"  Color="#E0E0E0" />
+          <SolidColorBrush x:Key="HoverBg"      Color="#E8E8E8" />
+          <SolidColorBrush x:Key="DialogBg"     Color="#F0F0F0" />
           <!-- Borders -->
-          <SolidColorBrush x:Key="BorderColor"       Color="#CACADE" />
-          <SolidColorBrush x:Key="ButtonBorderColor" Color="#AAAABE" />
-          <SolidColorBrush x:Key="DialogBorderColor" Color="#9999BB" />
+          <SolidColorBrush x:Key="BorderColor"       Color="#CACACA" />
+          <SolidColorBrush x:Key="ButtonBorderColor" Color="#AAAAAA" />
+          <SolidColorBrush x:Key="DialogBorderColor" Color="#999999" />
           <!-- Buttons -->
-          <SolidColorBrush x:Key="BtnSecondaryBg" Color="#DCDCF0" />
-          <SolidColorBrush x:Key="DisabledBg"     Color="#BBBBCC" />
+          <SolidColorBrush x:Key="BtnSecondaryBg" Color="#DCDCDC" />
+          <SolidColorBrush x:Key="DisabledBg"     Color="#BBBBBB" />
           <!-- Text -->
-          <SolidColorBrush x:Key="TextPrimary"    Color="#1A1A2A" />
-          <SolidColorBrush x:Key="TextSecondary"  Color="#2A2A4A" />
-          <SolidColorBrush x:Key="TextMuted"      Color="#4444AA" />
-          <SolidColorBrush x:Key="TextFaint"      Color="#666688" />
-          <SolidColorBrush x:Key="TextVeryFaint"  Color="#888899" />
-          <SolidColorBrush x:Key="TextLabel"      Color="#5555AA" />
-          <SolidColorBrush x:Key="TextHeaderKey"  Color="#4040AA" />
+          <SolidColorBrush x:Key="TextPrimary"    Color="#1A1A1A" />
+          <SolidColorBrush x:Key="TextSecondary"  Color="#2A2A2A" />
+          <SolidColorBrush x:Key="TextMuted"      Color="#444444" />
+          <SolidColorBrush x:Key="TextFaint"      Color="#666666" />
+          <SolidColorBrush x:Key="TextVeryFaint"  Color="#888888" />
+          <SolidColorBrush x:Key="TextLabel"      Color="#555555" />
+          <SolidColorBrush x:Key="TextHeaderKey"  Color="#404040" />
           <!-- Misc -->
-          <SolidColorBrush x:Key="TextSelectionBrush" Color="#B8B8EE" />
+          <SolidColorBrush x:Key="TextSelectionBrush" Color="#B8B8B8" />
         </ResourceDictionary>
 
       </ResourceDictionary.ThemeDictionaries>

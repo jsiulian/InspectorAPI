@@ -121,6 +121,7 @@
       <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}" />
       <Setter Property="CaretBrush" Value="#7C6AF7" />
       <Setter Property="SelectionBrush" Value="{DynamicResource TextSelectionBrush}" />
+      <Setter Property="VerticalContentAlignment" Value="Center"></Setter>
     </Style>
 
     <!-- ComboBox base -->

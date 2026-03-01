@@ -240,7 +240,7 @@
                                IsVisible="{Binding IsNotRequest}" />
                     <TextBlock Text="{Binding MethodBadge}"
                                FontSize="9" FontWeight="Bold"
-                               Foreground="{Binding MethodColorHex, Converter={x:Static conv:StringToBrushConverter.Instance}}"
+                               Foreground="{Binding MethodBadge, Converter={x:Static conv:MethodBrushConverter.Instance}}"
                                IsVisible="{Binding IsRequest}"
                                VerticalAlignment="Center" />
                   </StackPanel>

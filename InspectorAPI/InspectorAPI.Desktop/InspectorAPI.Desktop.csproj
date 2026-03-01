@@ -21,4 +21,8 @@
     <ProjectReference Include="..\InspectorAPI.Core\InspectorAPI.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <AvaloniaResource Include="Assets\icon.png" />
+  </ItemGroup>
+
 </Project>

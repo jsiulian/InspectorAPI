@@ -195,21 +195,10 @@ public partial class RequestTabViewModel : ViewModelBase
     private string BuildRawView(InspectorAPI.Core.Models.HttpResponseModel response)
     {
         var sb = new System.Text.StringBuilder();
-        // Request section
-        sb.AppendLine($"> {SelectedMethod} {Url} HTTP/1.1");
-        foreach (var h in response.SentRequestHeaders)
-            sb.AppendLine($"> {h.Key}: {h.Value}");
-        sb.AppendLine(">");
-        if (!string.IsNullOrEmpty(BodyContent))
-        {
-            sb.AppendLine(BodyContent);
-            sb.AppendLine();
-        }
-        // Response section
-        sb.AppendLine($"< HTTP/1.1 {response.StatusCode} {response.StatusText}");
+        sb.AppendLine($"HTTP/1.1 {response.StatusCode} {response.StatusText}");
         foreach (var h in response.Headers)
-            sb.AppendLine($"< {h.Key}: {h.Value}");
-        sb.AppendLine("<");
+            sb.AppendLine($"{h.Key}: {h.Value}");
+        sb.AppendLine();
         sb.Append(response.Body);
         return sb.ToString();
     }

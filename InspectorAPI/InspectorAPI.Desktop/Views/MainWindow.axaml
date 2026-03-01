@@ -310,6 +310,15 @@
                   <Button Classes="tab-btn"
                           Classes.active="{Binding IsSelected}"
                           Command="{Binding ActivateCommand}">
+                    <ToolTip.Tip>
+                      <StackPanel Spacing="2">
+                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                        <TextBlock Text="{Binding Url}"
+                                   FontSize="11"
+                                   Foreground="{DynamicResource TextFaint}"
+                                   IsVisible="{Binding Url, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                      </StackPanel>
+                    </ToolTip.Tip>
                     <StackPanel Orientation="Horizontal" Spacing="8">
                       <TextBlock Text="{Binding SelectedMethod}"
                                  FontSize="10" FontWeight="Bold"
@@ -407,13 +416,16 @@
                                         IsChecked="{Binding IsEnabled}"
                                         VerticalAlignment="Center"
                                         Margin="0,0,6,0" />
-                              <TextBox Grid.Column="1"
-                                       Text="{Binding Key}"
-                                       Watermark="Header name"
-                                       FontFamily="Consolas,monospace"
-                                       FontSize="12"
-                                       Padding="6,4"
-                                       Margin="0,0,4,0" />
+                              <AutoCompleteBox Grid.Column="1"
+                                              Text="{Binding Key}"
+                                              ItemsSource="{x:Static vm:RequestTabViewModel.CommonHeaders}"
+                                              MinimumPrefixLength="1"
+                                              FilterMode="StartsWith"
+                                              Watermark="Header name"
+                                              FontFamily="Consolas,monospace"
+                                              FontSize="12"
+                                              Padding="6,4"
+                                              Margin="0,0,4,0" />
                               <TextBox Grid.Column="2"
                                        Text="{Binding Value}"
                                        Watermark="Value"

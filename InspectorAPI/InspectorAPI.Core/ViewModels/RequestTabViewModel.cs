@@ -24,6 +24,35 @@ public partial class RequestTabViewModel : ViewModelBase
         "application/x-www-form-urlencoded",
         "text/html"
     ];
+    public static readonly string[] CommonHeaders =
+    [
+        "Accept",
+        "Accept-Charset",
+        "Accept-Encoding",
+        "Accept-Language",
+        "Authorization",
+        "Cache-Control",
+        "Connection",
+        "Content-Encoding",
+        "Content-Length",
+        "Content-Type",
+        "Cookie",
+        "Host",
+        "If-Match",
+        "If-Modified-Since",
+        "If-None-Match",
+        "Origin",
+        "Pragma",
+        "Referer",
+        "Transfer-Encoding",
+        "User-Agent",
+        "X-Api-Key",
+        "X-Auth-Token",
+        "X-Correlation-ID",
+        "X-Forwarded-For",
+        "X-Request-ID",
+        "X-Requested-With",
+    ];
 
     // Request fields
     [ObservableProperty]
@@ -103,6 +132,10 @@ public partial class RequestTabViewModel : ViewModelBase
                     p.PropertyChanged += (_, _) => OnPropertyChanged(nameof(RequestRaw));
             OnPropertyChanged(nameof(RequestRaw));
         };
+
+        // Default headers for new tabs
+        Headers.Add(new HeaderItemViewModel(h => Headers.Remove(h)) { Key = "Accept", Value = "application/json" });
+        Headers.Add(new HeaderItemViewModel(h => Headers.Remove(h)) { Key = "User-Agent", Value = "InspectorAPI" });
     }
 
     public string RequestRaw

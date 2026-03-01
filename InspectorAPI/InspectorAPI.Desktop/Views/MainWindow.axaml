@@ -201,7 +201,8 @@
       <!-- Collections tree -->
       <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
         <TreeView ItemsSource="{Binding CollectionTree}"
-                  Background="Transparent">
+                  Background="Transparent"
+                  KeyDown="OnCollectionTreeKeyDown">
           <TreeView.ItemTemplate>
             <TreeDataTemplate x:DataType="vm:CollectionTreeNodeViewModel"
                               ItemsSource="{Binding Children}">
@@ -239,7 +240,7 @@
                                IsVisible="{Binding IsNotRequest}" />
                     <TextBlock Text="{Binding MethodBadge}"
                                FontSize="9" FontWeight="Bold"
-                               Foreground="#61AFFE"
+                               Foreground="{Binding MethodColorHex, Converter={x:Static conv:StringToBrushConverter.Instance}}"
                                IsVisible="{Binding IsRequest}"
                                VerticalAlignment="Center" />
                   </StackPanel>
@@ -728,6 +729,50 @@
                     Command="{Binding CancelSaveDialogCommand}">Cancel</Button>
             <Button Classes="send-btn"
                     Command="{Binding SaveRequestCommand}">Save</Button>
+          </StackPanel>
+
+        </StackPanel>
+      </Border>
+    </Border>
+
+    <!-- ===== DELETE CONFIRMATION DIALOG OVERLAY ===== -->
+    <Border Grid.Column="0" Grid.ColumnSpan="3"
+            IsVisible="{Binding IsDeleteDialogOpen}"
+            Background="#88000011">
+      <Border Width="360"
+              Background="{DynamicResource DialogBg}"
+              BorderBrush="{DynamicResource DialogBorderColor}"
+              BorderThickness="1"
+              CornerRadius="8"
+              Padding="24"
+              HorizontalAlignment="Center"
+              VerticalAlignment="Center">
+        <StackPanel Spacing="16">
+
+          <TextBlock Text="Delete"
+                     FontSize="16" FontWeight="Bold"
+                     Foreground="{DynamicResource TextPrimary}" />
+
+          <TextBlock FontSize="13" TextWrapping="Wrap"
+                     Foreground="{DynamicResource TextSecondary}">
+            <Run Text="Are you sure you want to delete '" />
+            <Run Text="{Binding DeleteDialogNodeName}" FontWeight="SemiBold" />
+            <Run Text="'? This cannot be undone." />
+          </TextBlock>
+
+          <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+            <Button Background="{DynamicResource BtnSecondaryBg}"
+                    Foreground="{DynamicResource TextSecondary}"
+                    BorderThickness="0"
+                    Padding="16,8"
+                    CornerRadius="4"
+                    Command="{Binding CancelDeleteCommand}">Cancel</Button>
+            <Button Background="#CC2222"
+                    Foreground="White"
+                    BorderThickness="0"
+                    Padding="16,8"
+                    CornerRadius="4"
+                    Command="{Binding ConfirmDeleteCommand}">Delete</Button>
           </StackPanel>
 
         </StackPanel>

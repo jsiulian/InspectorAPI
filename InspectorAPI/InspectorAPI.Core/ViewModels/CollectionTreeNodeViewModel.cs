@@ -49,6 +49,18 @@ public partial class CollectionTreeNodeViewModel : ViewModelBase
 
     public string MethodBadge => SavedRequest?.Request.Method ?? string.Empty;
 
+    public string MethodColorHex => SavedRequest?.Request.Method switch
+    {
+        "GET"     => "#61AFFE",
+        "POST"    => "#49CC90",
+        "PUT"     => "#FCA130",
+        "DELETE"  => "#F93E3E",
+        "PATCH"   => "#50E3C2",
+        "HEAD"    => "#9012FE",
+        "OPTIONS" => "#0D5AA7",
+        _         => "#61AFFE"
+    };
+
     public void SetActions(
         Action<CollectionTreeNodeViewModel>? openAction,
         Action<CollectionTreeNodeViewModel>? deleteAction,

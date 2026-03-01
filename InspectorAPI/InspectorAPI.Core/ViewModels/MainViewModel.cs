@@ -28,6 +28,11 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty] private string _nameDialogValue = string.Empty;
     private Func<string, Task>? _pendingNameAction;
 
+    // Delete confirmation dialog state
+    [ObservableProperty] private bool _isDeleteDialogOpen;
+    [ObservableProperty] private string _deleteDialogNodeName = string.Empty;
+    private Func<Task>? _pendingDeleteAction;
+
     public MainViewModel(ICollectionService collectionService, IHttpRequestService httpRequestService)
     {
         _collectionService = collectionService;
@@ -121,6 +126,29 @@ public partial class MainViewModel : ViewModelBase
         _pendingNameAction = null;
     }
 
+    private void ShowDeleteConfirmation(CollectionTreeNodeViewModel node)
+    {
+        _pendingDeleteAction = () => DeleteNodeAsync(node);
+        DeleteDialogNodeName = node.Name;
+        IsDeleteDialogOpen = true;
+    }
+
+    [RelayCommand]
+    private async Task ConfirmDelete()
+    {
+        if (_pendingDeleteAction is not null)
+            await _pendingDeleteAction();
+        IsDeleteDialogOpen = false;
+        _pendingDeleteAction = null;
+    }
+
+    [RelayCommand]
+    private void CancelDelete()
+    {
+        IsDeleteDialogOpen = false;
+        _pendingDeleteAction = null;
+    }
+
     [RelayCommand]
     private async Task SaveRequest()
     {
@@ -184,7 +212,7 @@ public partial class MainViewModel : ViewModelBase
             ParentCollectionId = col.Id,
             IsExpanded = false
         };
-        node.SetActions(null, n => _ = DeleteNodeAsync(n), n => NewFolderOnNode(n), n => RenameNode(n), n => NewRequestOnNode(n));
+        node.SetActions(null, n => ShowDeleteConfirmation(n), n => NewFolderOnNode(n), n => RenameNode(n), n => NewRequestOnNode(n));
 
         foreach (var folder in col.Folders)
             node.Children.Add(BuildFolderNode(folder, col.Id, null));
@@ -206,7 +234,7 @@ public partial class MainViewModel : ViewModelBase
             ParentFolderId = parentFolderId,
             IsExpanded = false
         };
-        node.SetActions(null, n => _ = DeleteNodeAsync(n), n => NewFolderOnNode(n), n => RenameNode(n), n => NewRequestOnNode(n));
+        node.SetActions(null, n => ShowDeleteConfirmation(n), n => NewFolderOnNode(n), n => RenameNode(n), n => NewRequestOnNode(n));
 
         foreach (var sub in folder.Folders)
             node.Children.Add(BuildFolderNode(sub, collectionId, folder.Id));
@@ -227,7 +255,7 @@ public partial class MainViewModel : ViewModelBase
             ParentCollectionId = collectionId,
             ParentFolderId = folderId
         };
-        node.SetActions(OpenRequestInTab, n => _ = DeleteNodeAsync(n), null, n => RenameNode(n));
+        node.SetActions(OpenRequestInTab, n => ShowDeleteConfirmation(n), null, n => RenameNode(n));
         return node;
     }
 

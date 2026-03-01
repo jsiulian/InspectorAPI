@@ -206,7 +206,8 @@
             <TreeDataTemplate x:DataType="vm:CollectionTreeNodeViewModel"
                               ItemsSource="{Binding Children}">
               <!-- Transparent background needed so the full row width is hittable for the ContextMenu -->
-              <Border Background="Transparent" HorizontalAlignment="Stretch">
+              <Border Background="Transparent" HorizontalAlignment="Stretch"
+                      DoubleTapped="OnTreeNodeDoubleTapped">
 
                 <Border.ContextMenu>
                   <ContextMenu>

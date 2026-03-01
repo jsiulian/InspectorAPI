@@ -485,6 +485,7 @@
                              Padding="12"
                              Background="{DynamicResource AppBg}"
                              BorderThickness="0"
+                             VerticalContentAlignment="Top"
                              Watermark="Request body (JSON, XML, text…)" />
                   </Grid>
                 </TabItem>

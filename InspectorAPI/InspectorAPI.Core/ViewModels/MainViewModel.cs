@@ -184,7 +184,7 @@ public partial class MainViewModel : ViewModelBase
             ParentCollectionId = col.Id,
             IsExpanded = false
         };
-        node.SetActions(null, n => _ = DeleteNodeAsync(n), n => NewFolderOnNode(n), n => RenameNode(n));
+        node.SetActions(null, n => _ = DeleteNodeAsync(n), n => NewFolderOnNode(n), n => RenameNode(n), n => NewRequestOnNode(n));
 
         foreach (var folder in col.Folders)
             node.Children.Add(BuildFolderNode(folder, col.Id, null));
@@ -206,7 +206,7 @@ public partial class MainViewModel : ViewModelBase
             ParentFolderId = parentFolderId,
             IsExpanded = false
         };
-        node.SetActions(null, n => _ = DeleteNodeAsync(n), n => NewFolderOnNode(n), n => RenameNode(n));
+        node.SetActions(null, n => _ = DeleteNodeAsync(n), n => NewFolderOnNode(n), n => RenameNode(n), n => NewRequestOnNode(n));
 
         foreach (var sub in folder.Folders)
             node.Children.Add(BuildFolderNode(sub, collectionId, folder.Id));
@@ -277,6 +277,19 @@ public partial class MainViewModel : ViewModelBase
         NameDialogTitle = "New Folder";
         NameDialogValue = string.Empty;
         IsNameDialogOpen = true;
+    }
+
+    private void NewRequestOnNode(CollectionTreeNodeViewModel parent)
+    {
+        var tab = new RequestTabViewModel(_httpRequestService, CloseTab, t => SelectedTab = t, OpenSaveDialogForTab);
+        Tabs.Add(tab);
+        SelectedTab = tab;
+
+        // Pre-open the save dialog with this collection/folder already selected
+        SaveRequestName = string.Empty;
+        RebuildFlatSaveTargets();
+        SelectedSaveTarget = FlatSaveTargets.FirstOrDefault(n => n == parent);
+        IsSaveDialogOpen = true;
     }
 
     private void RenameNode(CollectionTreeNodeViewModel node)

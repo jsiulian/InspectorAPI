@@ -205,15 +205,19 @@
           <TreeView.ItemTemplate>
             <TreeDataTemplate x:DataType="vm:CollectionTreeNodeViewModel"
                               ItemsSource="{Binding Children}">
-              <Grid ColumnDefinitions="Auto,*" Margin="0,1">
+              <!-- Transparent background needed so the full row width is hittable for the ContextMenu -->
+              <Border Background="Transparent" HorizontalAlignment="Stretch">
 
-                <Grid.ContextMenu>
+                <Border.ContextMenu>
                   <ContextMenu>
                     <MenuItem Header="Open in Tab"
                               Command="{Binding OpenCommand}"
                               IsVisible="{Binding IsRequest}" />
                     <MenuItem Header="New Folder"
                               Command="{Binding NewFolderCommand}"
+                              IsVisible="{Binding IsCollectionOrFolder}" />
+                    <MenuItem Header="New Request"
+                              Command="{Binding NewRequestCommand}"
                               IsVisible="{Binding IsCollectionOrFolder}" />
                     <MenuItem Header="Rename"
                               Command="{Binding RenameCommand}" />
@@ -222,29 +226,32 @@
                               Command="{Binding DeleteCommand}"
                               Foreground="#F93E3E" />
                   </ContextMenu>
-                </Grid.ContextMenu>
+                </Border.ContextMenu>
 
-                <!-- Icon / method badge -->
-                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Spacing="4">
-                  <TextBlock Text="{Binding Icon}"
-                             FontSize="11"
-                             Foreground="{DynamicResource TextLabel}"
-                             IsVisible="{Binding IsNotRequest}" />
-                  <TextBlock Text="{Binding MethodBadge}"
-                             FontSize="9" FontWeight="Bold"
-                             Foreground="#61AFFE"
-                             IsVisible="{Binding IsRequest}"
-                             VerticalAlignment="Center" />
-                </StackPanel>
+                <Grid ColumnDefinitions="Auto,*" Margin="0,1">
 
-                <!-- Node name -->
-                <TextBlock Grid.Column="1"
-                           Text="{Binding Name}"
-                           VerticalAlignment="Center"
-                           Margin="4,0"
-                           TextTrimming="CharacterEllipsis" />
+                  <!-- Icon / method badge -->
+                  <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Spacing="4">
+                    <TextBlock Text="{Binding Icon}"
+                               FontSize="11"
+                               Foreground="{DynamicResource TextLabel}"
+                               IsVisible="{Binding IsNotRequest}" />
+                    <TextBlock Text="{Binding MethodBadge}"
+                               FontSize="9" FontWeight="Bold"
+                               Foreground="#61AFFE"
+                               IsVisible="{Binding IsRequest}"
+                               VerticalAlignment="Center" />
+                  </StackPanel>
 
-              </Grid>
+                  <!-- Node name -->
+                  <TextBlock Grid.Column="1"
+                             Text="{Binding Name}"
+                             VerticalAlignment="Center"
+                             Margin="4,0"
+                             TextTrimming="CharacterEllipsis" />
+
+                </Grid>
+              </Border>
             </TreeDataTemplate>
           </TreeView.ItemTemplate>
         </TreeView>

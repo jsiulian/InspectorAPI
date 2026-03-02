@@ -351,9 +351,9 @@
             <Grid>
               <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
-                <RowDefinition Height="*"   MinHeight="80" />
+                <RowDefinition Height="Auto"   MinHeight="80" />
                 <RowDefinition Height="5" />
-                <RowDefinition Height="300" MinHeight="80" />
+                <RowDefinition Height="*" MinHeight="80" />
               </Grid.RowDefinitions>
 
               <!-- ===== REQUEST BAR ===== -->

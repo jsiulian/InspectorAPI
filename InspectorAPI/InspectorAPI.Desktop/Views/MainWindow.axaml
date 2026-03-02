@@ -704,7 +704,8 @@
                      FontSize="16" FontWeight="Bold"
                      Foreground="{DynamicResource TextPrimary}" />
 
-          <TextBox Text="{Binding NameDialogValue}"
+          <TextBox x:Name="NameDialogTextBox"
+                   Text="{Binding NameDialogValue}"
                    Padding="10,8"
                    FontSize="13" />
 
@@ -745,7 +746,8 @@
           <!-- Request name -->
           <StackPanel Spacing="6">
             <TextBlock Text="Request Name" FontSize="12" Foreground="{DynamicResource TextMuted}" />
-            <TextBox Text="{Binding SaveRequestName}"
+            <TextBox x:Name="SaveNameTextBox"
+                     Text="{Binding SaveRequestName}"
                      Padding="10,8"
                      FontSize="13" />
           </StackPanel>

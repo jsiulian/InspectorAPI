@@ -2,6 +2,7 @@ using System.IO;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Platform.Storage;
+using Avalonia.Threading;
 using InspectorAPI.Core.ViewModels;
 
 namespace InspectorAPI.Desktop.Views;
@@ -26,6 +27,18 @@ public partial class MainWindow : Window
                     FileTypeChoices = [new FilePickerFileType("JSON") { Patterns = ["*.json"] }]
                 });
                 return file?.TryGetLocalPath();
+            };
+
+            // Auto-focus the main textbox when a dialog opens
+            var nameBox = this.FindControl<TextBox>("NameDialogTextBox");
+            var saveBox = this.FindControl<TextBox>("SaveNameTextBox");
+
+            vm.PropertyChanged += (_, e) =>
+            {
+                if (e.PropertyName == nameof(MainViewModel.IsNameDialogOpen) && vm.IsNameDialogOpen)
+                    Dispatcher.UIThread.Post(() => { nameBox?.Focus(); nameBox?.SelectAll(); }, DispatcherPriority.Loaded);
+                else if (e.PropertyName == nameof(MainViewModel.IsSaveDialogOpen) && vm.IsSaveDialogOpen)
+                    Dispatcher.UIThread.Post(() => { saveBox?.Focus(); saveBox?.SelectAll(); }, DispatcherPriority.Loaded);
             };
         };
     }

@@ -533,10 +533,10 @@
                     <StackPanel Spacing="12">
                       <TextBlock Text="Authentication" FontSize="14" Foreground="{DynamicResource TextPrimary}" />
                       <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource TextFaint}">
-                        Add Authorization headers manually in the Headers tab.
-                        Common patterns:&#10;
-                        • Bearer token: Authorization: Bearer &lt;token&gt;&#10;
-                        • Basic auth: Authorization: Basic &lt;base64&gt;&#10;
+                        Add Authorization headers manually in the Headers tab.<LineBreak/>
+                        Common patterns:&#10;<LineBreak/>
+                        • Bearer token: Authorization: Bearer &lt;token&gt;&#10;<LineBreak/>
+                        • Basic auth: Authorization: Basic &lt;base64&gt;&#10;<LineBreak/>
                         • API key: X-Api-Key: &lt;key&gt;
                       </TextBlock>
                     </StackPanel>

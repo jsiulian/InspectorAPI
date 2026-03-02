@@ -25,6 +25,7 @@ public class HttpRequestService : IHttpRequestService
 
     public async Task<HttpResponseModel> SendAsync(HttpRequestModel request, CancellationToken cancellationToken = default)
     {
+        var sentHeaders = new Dictionary<string, string>();
         try
         {
             var url = BuildUrl(request.Url, request.QueryParams);
@@ -49,7 +50,6 @@ public class HttpRequestService : IHttpRequestService
             if (httpRequest.Content != null)
                 await httpRequest.Content.LoadIntoBufferAsync();
 
-            var sentHeaders = new Dictionary<string, string>();
             // Host is implicit — derive it from the URL
             if (Uri.TryCreate(url, UriKind.Absolute, out var hostUri))
                 sentHeaders["Host"] = hostUri.IsDefaultPort ? hostUri.Host : $"{hostUri.Host}:{hostUri.Port}";
@@ -60,7 +60,8 @@ public class HttpRequestService : IHttpRequestService
                     sentHeaders[h.Key] = string.Join(", ", h.Value);
 
             var sw = Stopwatch.StartNew();
-            using var response = await _httpClient.SendAsync(httpRequest, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            using var response = await _httpClient.SendAsync(httpRequest, HttpCompletionOption.ResponseHeadersRead,
+                cancellationToken);
             var bodyBytes = await response.Content.ReadAsByteArrayAsync(cancellationToken);
             sw.Stop();
 
@@ -81,6 +82,19 @@ public class HttpRequestService : IHttpRequestService
                 Body = bodyText,
                 ElapsedMilliseconds = sw.ElapsedMilliseconds,
                 BodySizeBytes = bodyBytes.Length
+            };
+        }
+        catch (HttpRequestException ex)
+        {
+            return new HttpResponseModel
+            {
+                StatusCode = (int?)ex.StatusCode ?? -1,
+                StatusText = ex.StatusCode?.ToString() ?? ex.Message,
+                Headers = new Dictionary<string, string>(),
+                SentRequestHeaders = sentHeaders,
+                // Body = ex.,
+                // ElapsedMilliseconds = sw.ElapsedMilliseconds,
+                // BodySizeBytes = bodyBytes.Length
             };
         }
         catch (TaskCanceledException ex) when (!cancellationToken.IsCancellationRequested)

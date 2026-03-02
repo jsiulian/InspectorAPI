@@ -175,7 +175,12 @@
 
   </Window.Styles>
 
-  <Grid ColumnDefinitions="280,4,*">
+  <Grid>
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="280" MinWidth="160" />
+      <ColumnDefinition Width="4" />
+      <ColumnDefinition Width="*"  MinWidth="460" />
+    </Grid.ColumnDefinitions>
 
     <!-- ===== COLLECTIONS SIDEBAR ===== -->
     <DockPanel Grid.Column="0" Background="{DynamicResource SidebarBg}">
@@ -343,13 +348,26 @@
         <ContentControl.DataTemplates>
           <DataTemplate x:DataType="vm:RequestTabViewModel">
 
-            <Grid RowDefinitions="Auto,*,5,300">
+            <Grid>
+              <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*"   MinHeight="80" />
+                <RowDefinition Height="5" />
+                <RowDefinition Height="300" MinHeight="80" />
+              </Grid.RowDefinitions>
 
               <!-- ===== REQUEST BAR ===== -->
               <Border Grid.Row="0" Padding="10,8"
                       Background="{DynamicResource SidebarBg}"
                       BorderThickness="0,0,0,1" BorderBrush="{DynamicResource BorderColor}">
-                <Grid ColumnDefinitions="150,*,Auto,Auto,Auto">
+                <Grid>
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="150" MinWidth="100" />
+                    <ColumnDefinition Width="*"   MinWidth="120" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                  </Grid.ColumnDefinitions>
 
                   <!-- Method selector -->
                   <ComboBox Grid.Column="0"

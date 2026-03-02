@@ -99,6 +99,10 @@ public partial class MainViewModel : ViewModelBase
             Request = tab.ToSaveModel()
         };
         await _collectionService.UpdateRequestAsync(tab.SavedCollectionId!.Value, tab.SavedFolderId, saved);
+
+        // Keep the collection tree in sync
+        var node = FindRequestNode(CollectionTree, saved.Id);
+        node?.UpdateMethodBadge(tab.SelectedMethod);
     }
 
     private void RebuildFlatSaveTargets()
@@ -216,6 +220,12 @@ public partial class MainViewModel : ViewModelBase
             var reqNode = BuildRequestNode(saved, collectionId, folderId);
             SelectedSaveTarget.Children.Add(reqNode);
             SelectedSaveTarget.IsExpanded = true;
+        }
+        else
+        {
+            // Update collection tree node so the method badge stays current
+            var node = FindRequestNode(CollectionTree, saved.Id);
+            node?.UpdateMethodBadge(saved.Request.Method);
         }
 
         IsSaveDialogOpen = false;
@@ -395,6 +405,19 @@ public partial class MainViewModel : ViewModelBase
 
     private static Guid GetCollectionId(CollectionTreeNodeViewModel node) =>
         node.ParentCollectionId ?? node.Collection?.Id ?? Guid.Empty;
+
+    private static CollectionTreeNodeViewModel? FindRequestNode(
+        IEnumerable<CollectionTreeNodeViewModel> nodes, Guid requestId)
+    {
+        foreach (var node in nodes)
+        {
+            if (node.NodeType == CollectionNodeType.Request && node.SavedRequest?.Id == requestId)
+                return node;
+            var found = FindRequestNode(node.Children, requestId);
+            if (found is not null) return found;
+        }
+        return null;
+    }
 
     private static bool RemoveNodeFromTree(ObservableCollection<CollectionTreeNodeViewModel> nodes, CollectionTreeNodeViewModel target)
     {

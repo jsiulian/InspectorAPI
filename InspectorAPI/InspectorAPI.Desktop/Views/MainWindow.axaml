@@ -33,7 +33,8 @@
       <Setter Property="CornerRadius" Value="0" />
     </Style>
     <Style Selector="Button.tab-btn.active">
-      <Setter Property="Background" Value="{DynamicResource AppBg}" />
+      <!-- SidebarBg matches the request-bar Border background exactly -->
+      <Setter Property="Background" Value="{DynamicResource SidebarBg}" />
       <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}" />
     </Style>
     <Style Selector="Button.tab-btn:pointerover /template/ ContentPresenter">
@@ -41,7 +42,7 @@
     </Style>
     <!-- Active tab: suppress hover so it stays visually "connected" to content -->
     <Style Selector="Button.tab-btn.active:pointerover /template/ ContentPresenter">
-      <Setter Property="Background" Value="{DynamicResource AppBg}" />
+      <Setter Property="Background" Value="{DynamicResource SidebarBg}" />
     </Style>
     <!-- Active tab: underline the title text -->
     <Style Selector="Button.tab-btn.active TextBlock.tab-title">
@@ -64,20 +65,12 @@
       <Setter Property="Background" Value="#CC3333" />
     </Style>
 
-    <!-- Send button -->
+    <!-- Send / confirm button — layout only; colour comes from the Fluent "accent" class -->
     <Style Selector="Button.send-btn">
-      <Setter Property="Background" Value="#7C6AF7" />
-      <Setter Property="Foreground" Value="White" />
       <Setter Property="BorderThickness" Value="0" />
       <Setter Property="Padding" Value="16,8" />
       <Setter Property="FontWeight" Value="SemiBold" />
       <Setter Property="CornerRadius" Value="4" />
-    </Style>
-    <Style Selector="Button.send-btn:pointerover /template/ ContentPresenter">
-      <Setter Property="Background" Value="#9080FF" />
-    </Style>
-    <Style Selector="Button.send-btn:disabled /template/ ContentPresenter">
-      <Setter Property="Background" Value="{DynamicResource DisabledBg}" />
     </Style>
 
     <!-- New tab button -->
@@ -119,7 +112,11 @@
       <Setter Property="Background" Value="{DynamicResource InputBg}" />
       <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
       <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}" />
-      <Setter Property="CaretBrush" Value="#7C6AF7" />
+      <Setter Property="CaretBrush">
+        <Setter.Value>
+          <SolidColorBrush Color="{DynamicResource SystemAccentColor}" />
+        </Setter.Value>
+      </Setter>
       <Setter Property="SelectionBrush" Value="{DynamicResource TextSelectionBrush}" />
       <Setter Property="VerticalContentAlignment" Value="Center"></Setter>
     </Style>
@@ -373,7 +370,7 @@
 
                   <!-- Send button -->
                   <Button Grid.Column="2"
-                          Classes="send-btn"
+                          Classes="send-btn accent"
                           Command="{Binding SendRequestCommand}"
                           IsVisible="{Binding !IsSending}">Send</Button>
 
@@ -718,7 +715,7 @@
                     Padding="16,8"
                     CornerRadius="4"
                     Command="{Binding CancelNameDialogCommand}">Cancel</Button>
-            <Button Classes="send-btn"
+            <Button Classes="send-btn accent"
                     Command="{Binding ConfirmNameDialogCommand}">OK</Button>
           </StackPanel>
 
@@ -780,7 +777,7 @@
                     Padding="16,8"
                     CornerRadius="4"
                     Command="{Binding CancelSaveDialogCommand}">Cancel</Button>
-            <Button Classes="send-btn"
+            <Button Classes="send-btn accent"
                     Command="{Binding SaveRequestCommand}">Save</Button>
           </StackPanel>
 

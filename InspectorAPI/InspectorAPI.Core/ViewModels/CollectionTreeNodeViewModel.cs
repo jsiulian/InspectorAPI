@@ -51,6 +51,13 @@ public partial class CollectionTreeNodeViewModel : ViewModelBase
 
     public string MethodBadge => SavedRequest?.Request.Method ?? string.Empty;
 
+    public void UpdateMethodBadge(string method)
+    {
+        if (SavedRequest is not null)
+            SavedRequest.Request.Method = method;
+        OnPropertyChanged(nameof(MethodBadge));
+    }
+
     public void SetActions(
         Action<CollectionTreeNodeViewModel>? openAction,
         Action<CollectionTreeNodeViewModel>? deleteAction,

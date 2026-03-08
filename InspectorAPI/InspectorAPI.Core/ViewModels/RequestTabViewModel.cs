@@ -395,7 +395,7 @@ public partial class RequestTabViewModel : ViewModelBase
 
     partial void OnSelectedBodyContentTypeChanged(string value)
     {
-        bool triggeredExternally = _syncingContentType;
+        bool triggeredExternally = _syncingContentType || _syncingRaw;
 
         OnPropertyChanged(nameof(IsRawBody));
         OnPropertyChanged(nameof(IsFormUrlEncodedBody));
@@ -805,7 +805,7 @@ public partial class RequestTabViewModel : ViewModelBase
         finally { _revertingBodyType = false; }
     }
 
-    [RelayCommand] private void Close() => _closeAction(this);
+    [RelayCommand] private void Close() { IsBodyClearConfirmDialogOpen = false; _closeAction(this); }
     [RelayCommand] private void Activate() => _activateAction?.Invoke(this);
     [RelayCommand] private void OpenSaveDialog() => _saveDialogAction?.Invoke(this);
     [RelayCommand] private void Duplicate() => _duplicateAction?.Invoke(this);

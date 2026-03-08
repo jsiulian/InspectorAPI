@@ -28,6 +28,9 @@ public partial class RequestTabViewModel : ViewModelBase
     // True while rebuilding raw from fields, or while parsing raw into fields — prevents loops
     private bool _syncingRaw;
 
+    // Set permanently when Close() is called — suppresses any binding write-backs during DataTemplate teardown
+    private bool _isClosing;
+
     // The content type to revert to if user cancels the body-clear dialog
     private string _previousBodyContentType = "application/json";
 
@@ -395,7 +398,7 @@ public partial class RequestTabViewModel : ViewModelBase
 
     partial void OnSelectedBodyContentTypeChanged(string value)
     {
-        bool triggeredExternally = _syncingContentType || _syncingRaw;
+        bool triggeredExternally = _syncingContentType || _syncingRaw || _isClosing;
 
         OnPropertyChanged(nameof(IsRawBody));
         OnPropertyChanged(nameof(IsFormUrlEncodedBody));
@@ -805,7 +808,7 @@ public partial class RequestTabViewModel : ViewModelBase
         finally { _revertingBodyType = false; }
     }
 
-    [RelayCommand] private void Close() { IsBodyClearConfirmDialogOpen = false; _closeAction(this); }
+    [RelayCommand] private void Close() { _isClosing = true; IsBodyClearConfirmDialogOpen = false; _closeAction(this); }
     [RelayCommand] private void Activate() => _activateAction?.Invoke(this);
     [RelayCommand] private void OpenSaveDialog() => _saveDialogAction?.Invoke(this);
     [RelayCommand] private void Duplicate() => _duplicateAction?.Invoke(this);

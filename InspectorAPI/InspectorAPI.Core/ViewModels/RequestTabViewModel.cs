@@ -86,6 +86,7 @@ public partial class RequestTabViewModel : ViewModelBase
     private string _selectedMethod = "GET";
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(RequestRaw))]
+    [NotifyPropertyChangedFor(nameof(IsRawBody))]
     private string _bodyContent = string.Empty;
     [ObservableProperty]
     private string _selectedBodyContentType = "application/json";
@@ -122,9 +123,14 @@ public partial class RequestTabViewModel : ViewModelBase
     public ObservableCollection<FormPartViewModel> FormParts { get; } = [];
 
     // Computed body-type switches (used in AXAML without converters)
-    public bool IsRawBody => !IsFormUrlEncodedBody && !IsMultipartBody;
     public bool IsFormUrlEncodedBody => SelectedBodyContentType == "application/x-www-form-urlencoded";
     public bool IsMultipartBody => SelectedBodyContentType == "multipart/form-data";
+    // Falls back to raw when a form type is active but its collection is empty and BodyContent has text
+    // (handles old saved requests that stored everything as raw body text)
+    public bool IsRawBody =>
+        (!IsFormUrlEncodedBody && !IsMultipartBody) ||
+        (IsFormUrlEncodedBody && FormParams.Count == 0 && !string.IsNullOrWhiteSpace(BodyContent)) ||
+        (IsMultipartBody && FormParts.Count == 0 && !string.IsNullOrWhiteSpace(BodyContent));
 
     public string TabTitle
     {
@@ -179,6 +185,7 @@ public partial class RequestTabViewModel : ViewModelBase
                 foreach (HeaderItemViewModel p in e.NewItems)
                     p.PropertyChanged += (_, _) => OnPropertyChanged(nameof(RequestRaw));
             OnPropertyChanged(nameof(RequestRaw));
+            OnPropertyChanged(nameof(IsRawBody)); // IsRawBody depends on FormParams.Count
         };
         FormParts.CollectionChanged += (_, e) =>
         {
@@ -186,6 +193,7 @@ public partial class RequestTabViewModel : ViewModelBase
                 foreach (FormPartViewModel p in e.NewItems)
                     p.PropertyChanged += (_, _) => OnPropertyChanged(nameof(RequestRaw));
             OnPropertyChanged(nameof(RequestRaw));
+            OnPropertyChanged(nameof(IsRawBody)); // IsRawBody depends on FormParts.Count
         };
 
         // Default headers for new tabs
@@ -483,6 +491,18 @@ public partial class RequestTabViewModel : ViewModelBase
             var resolvedCT = ctHeader?.Value ?? saved.Request.BodyContentType;
             SetCustomBodyContentType(string.IsNullOrEmpty(resolvedCT) ? null : resolvedCT);
             SelectedBodyContentType = string.IsNullOrEmpty(resolvedCT) ? "application/json" : resolvedCT;
+
+            // Migrate old saves: if url-encoded type is set but body is stored as raw text
+            // (FormParams was not yet a thing when the request was saved), parse it now.
+            if (SelectedBodyContentType == "application/x-www-form-urlencoded"
+                && FormParams.Count == 0
+                && !string.IsNullOrWhiteSpace(BodyContent)
+                && TryParseUrlEncoded(BodyContent, out var migratedParams))
+            {
+                foreach (var (k, v) in migratedParams)
+                    FormParams.Add(new HeaderItemViewModel(p => FormParams.Remove(p)) { Key = k, Value = v });
+                BodyContent = string.Empty;
+            }
 
             IsDirty = false;
         }

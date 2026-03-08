@@ -797,6 +797,49 @@
 
     </Grid>
 
+    <!-- ===== BODY CLEAR CONFIRMATION DIALOG OVERLAY ===== -->
+    <Border Grid.Column="0" Grid.ColumnSpan="3"
+            IsVisible="{Binding SelectedTab.IsBodyClearConfirmDialogOpen}"
+            Background="#88000011">
+      <Border Width="400"
+              Background="{DynamicResource DialogBg}"
+              BorderBrush="{DynamicResource DialogBorderColor}"
+              BorderThickness="1"
+              CornerRadius="8"
+              Padding="24"
+              HorizontalAlignment="Center"
+              VerticalAlignment="Center">
+        <StackPanel Spacing="16">
+
+          <TextBlock Text="Switch Content Type"
+                     FontSize="16" FontWeight="Bold"
+                     Foreground="{DynamicResource TextPrimary}" />
+
+          <TextBlock FontSize="13" TextWrapping="Wrap"
+                     Foreground="{DynamicResource TextSecondary}">
+            The current body content doesn't match the selected format.
+            Proceeding will clear it.
+          </TextBlock>
+
+          <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+            <Button Background="{DynamicResource BtnSecondaryBg}"
+                    Foreground="{DynamicResource TextSecondary}"
+                    BorderThickness="0"
+                    Padding="16,8"
+                    CornerRadius="4"
+                    Command="{Binding SelectedTab.CancelBodyClearCommand}">Cancel</Button>
+            <Button Background="#CC2222"
+                    Foreground="White"
+                    BorderThickness="0"
+                    Padding="16,8"
+                    CornerRadius="4"
+                    Command="{Binding SelectedTab.ConfirmBodyClearCommand}">Proceed and Clear Body</Button>
+          </StackPanel>
+
+        </StackPanel>
+      </Border>
+    </Border>
+
     <!-- ===== NAME DIALOG OVERLAY (new collection / new folder / rename) ===== -->
     <Border Grid.Column="0" Grid.ColumnSpan="3"
             IsVisible="{Binding IsNameDialogOpen}"

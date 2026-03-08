@@ -19,8 +19,17 @@ public partial class RequestTabViewModel : ViewModelBase
     // Prevents re-entrant URL ↔ QueryParams sync
     private bool _syncingUrl;
 
-    // Prevents re-entrant BodyContentType ↔ Content-Type header sync
+    // True while change came FROM the header (or during load/copy) — suppresses header sync and auto-populate
     private bool _syncingContentType;
+
+    // True while reverting SelectedBodyContentType after user cancels the body-clear dialog
+    private bool _revertingBodyType;
+
+    // The content type to revert to if user cancels the body-clear dialog
+    private string _previousBodyContentType = "application/json";
+
+    // Tracks the single custom Content-Type value injected into BodyContentTypes (prevents accumulation)
+    private string? _customBodyContentType;
 
     public static readonly string[] HttpMethods = ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"];
     public static readonly string[] ContentTypes =
@@ -86,6 +95,7 @@ public partial class RequestTabViewModel : ViewModelBase
     [ObservableProperty] private bool _hasResponse;
     [ObservableProperty] private bool _isDirty;
     [ObservableProperty] private bool _isSelected;
+    [ObservableProperty] private bool _isBodyClearConfirmDialogOpen;
 
     // Response fields
     [ObservableProperty] private string _responseStatus = string.Empty;
@@ -104,7 +114,7 @@ public partial class RequestTabViewModel : ViewModelBase
     public ObservableCollection<HeaderItemViewModel> QueryParams { get; } = [];
     public ObservableCollection<HeaderItemViewModel> ResponseHeaders { get; } = [];
 
-    // Instance collection so custom values from the Content-Type header can be appended at runtime
+    // Standard types + at most ONE injected custom type (prevents dropdown accumulation)
     public ObservableCollection<string> BodyContentTypes { get; } = new(ContentTypes);
 
     // Form body collections
@@ -183,6 +193,58 @@ public partial class RequestTabViewModel : ViewModelBase
         Headers.Add(new HeaderItemViewModel(h => Headers.Remove(h)) { Key = "User-Agent", Value = "InspectorAPI" });
     }
 
+    // Called just before the property changes — saves current value so CancelBodyClear can revert.
+    partial void OnSelectedBodyContentTypeChanging(string value)
+    {
+        if (!_revertingBodyType)
+            _previousBodyContentType = SelectedBodyContentType;
+    }
+
+    partial void OnSelectedBodyContentTypeChanged(string value)
+    {
+        // Capture whether this change originated from the header sync or a load/copy operation.
+        // When true: skip header sync (already done) and skip auto-populate/dialog (not user-initiated).
+        bool triggeredExternally = _syncingContentType;
+
+        OnPropertyChanged(nameof(IsRawBody));
+        OnPropertyChanged(nameof(IsFormUrlEncodedBody));
+        OnPropertyChanged(nameof(IsMultipartBody));
+        OnPropertyChanged(nameof(RequestRaw));
+
+        if (_revertingBodyType) return;
+
+        // Sync Content-Type header when user changed the dropdown
+        if (!triggeredExternally)
+        {
+            _syncingContentType = true;
+            try { SyncContentTypeHeader(value); }
+            finally { _syncingContentType = false; }
+        }
+
+        // Auto-populate form fields or ask for confirmation — only for user dropdown changes
+        if (!triggeredExternally && !string.IsNullOrWhiteSpace(BodyContent))
+        {
+            if (value == "application/x-www-form-urlencoded")
+            {
+                if (TryParseUrlEncoded(BodyContent, out var parsedParams))
+                {
+                    FormParams.Clear();
+                    foreach (var (k, v) in parsedParams)
+                        FormParams.Add(new HeaderItemViewModel(p => FormParams.Remove(p)) { Key = k, Value = v });
+                    BodyContent = string.Empty;
+                }
+                else
+                {
+                    IsBodyClearConfirmDialogOpen = true;
+                }
+            }
+            else if (value == "multipart/form-data")
+            {
+                IsBodyClearConfirmDialogOpen = true;
+            }
+        }
+    }
+
     // Called by the toolkit when Url changes — syncs query params panel from the new URL
     partial void OnUrlChanged(string value)
     {
@@ -192,22 +254,7 @@ public partial class RequestTabViewModel : ViewModelBase
         finally { _syncingUrl = false; }
     }
 
-    // Called by the toolkit when SelectedBodyContentType changes
-    partial void OnSelectedBodyContentTypeChanged(string value)
-    {
-        OnPropertyChanged(nameof(IsRawBody));
-        OnPropertyChanged(nameof(IsFormUrlEncodedBody));
-        OnPropertyChanged(nameof(IsMultipartBody));
-        OnPropertyChanged(nameof(RequestRaw));
-
-        if (_syncingContentType) return;
-        _syncingContentType = true;
-        try { SyncContentTypeHeader(value); }
-        finally { _syncingContentType = false; }
-    }
-
     // Merges the query string in 'url' into the QueryParams collection.
-    // Enabled params are updated to match; disabled params are left alone.
     private void SyncParamsFromUrl(string url)
     {
         var qIdx = url.IndexOf('?');
@@ -226,7 +273,6 @@ public partial class RequestTabViewModel : ViewModelBase
 
         var urlParamKeys = urlParams.Select(p => p.Key).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        // Remove enabled params no longer present in the URL
         for (int i = QueryParams.Count - 1; i >= 0; i--)
         {
             var param = QueryParams[i];
@@ -234,7 +280,6 @@ public partial class RequestTabViewModel : ViewModelBase
                 QueryParams.RemoveAt(i);
         }
 
-        // Update existing or add new params from URL
         foreach (var (key, value) in urlParams)
         {
             var existing = QueryParams.FirstOrDefault(p =>
@@ -265,7 +310,8 @@ public partial class RequestTabViewModel : ViewModelBase
         finally { _syncingUrl = false; }
     }
 
-    // Finds the enabled Content-Type header and syncs its value to SelectedBodyContentType.
+    // Finds the enabled Content-Type header and syncs its value into SelectedBodyContentType.
+    // Maintains a single custom slot in BodyContentTypes — replaces old partial value with new one.
     private void SyncBodyContentTypeFromHeader()
     {
         if (_syncingContentType) return;
@@ -280,15 +326,35 @@ public partial class RequestTabViewModel : ViewModelBase
         _syncingContentType = true;
         try
         {
-            // Inject custom value into the dropdown if not already present
-            if (!BodyContentTypes.Contains(value))
-                BodyContentTypes.Add(value);
+            SetCustomBodyContentType(value);
             SelectedBodyContentType = value;
         }
         finally { _syncingContentType = false; }
     }
 
-    // Finds or creates a Content-Type header and sets it to contentType.
+    // Ensures BodyContentTypes holds the standard list plus at most one custom entry.
+    // Removes any previous custom entry before adding the new one.
+    private void SetCustomBodyContentType(string? value)
+    {
+        if (_customBodyContentType != null && _customBodyContentType != value)
+        {
+            BodyContentTypes.Remove(_customBodyContentType);
+            _customBodyContentType = null;
+        }
+
+        if (value != null && !ContentTypes.Contains(value))
+        {
+            if (!BodyContentTypes.Contains(value))
+                BodyContentTypes.Add(value);
+            _customBodyContentType = value;
+        }
+        else if (value == null || ContentTypes.Contains(value))
+        {
+            _customBodyContentType = null;
+        }
+    }
+
+    // Finds or creates a Content-Type header and sets its value.
     private void SyncContentTypeHeader(string contentType)
     {
         var existing = Headers.FirstOrDefault(h =>
@@ -300,13 +366,38 @@ public partial class RequestTabViewModel : ViewModelBase
                 { Key = "Content-Type", Value = contentType, IsEnabled = true });
     }
 
+    // Tries to parse a raw body string as URL-encoded key=value pairs.
+    // Returns false if the body looks like JSON/XML or has no = signs.
+    private static bool TryParseUrlEncoded(string body, out List<(string Key, string Value)> pairs)
+    {
+        pairs = [];
+        if (string.IsNullOrWhiteSpace(body)) return true;
+
+        var trimmed = body.TrimStart();
+        if (trimmed.StartsWith('{') || trimmed.StartsWith('[') || trimmed.StartsWith('<'))
+            return false;
+        if (!body.Contains('='))
+            return false;
+
+        try
+        {
+            foreach (var segment in body.Split('&', StringSplitOptions.RemoveEmptyEntries))
+            {
+                var eq = segment.IndexOf('=');
+                if (eq < 0) return false;
+                pairs.Add((Uri.UnescapeDataString(segment[..eq]), Uri.UnescapeDataString(segment[(eq + 1)..])));
+            }
+            return pairs.Count > 0;
+        }
+        catch { return false; }
+    }
+
     public string RequestRaw
     {
         get
         {
             var sb = new System.Text.StringBuilder();
 
-            // Url already contains the enabled query params (kept in sync)
             if (Uri.TryCreate(Url, UriKind.Absolute, out var parsedUri))
             {
                 var requestTarget = parsedUri.PathAndQuery;
@@ -319,7 +410,7 @@ public partial class RequestTabViewModel : ViewModelBase
                 sb.AppendLine($"{SelectedMethod} {Url} HTTP/1.1");
             }
 
-            // If no Content-Type header is present but we have a body, emit one inline
+            // Only emit Content-Type inline if not already in the headers list
             var hasCTHeader = Headers.Any(h => h.IsEnabled &&
                 string.Equals(h.Key, "Content-Type", StringComparison.OrdinalIgnoreCase));
             var hasBody = IsFormUrlEncodedBody
@@ -337,10 +428,9 @@ public partial class RequestTabViewModel : ViewModelBase
 
             if (IsFormUrlEncodedBody)
             {
-                var encoded = string.Join("&", FormParams
+                sb.Append(string.Join("&", FormParams
                     .Where(p => p.IsEnabled && !string.IsNullOrWhiteSpace(p.Key))
-                    .Select(p => Uri.EscapeDataString(p.Key) + "=" + Uri.EscapeDataString(p.Value ?? "")));
-                sb.Append(encoded);
+                    .Select(p => Uri.EscapeDataString(p.Key) + "=" + Uri.EscapeDataString(p.Value ?? ""))));
             }
             else if (IsMultipartBody)
             {
@@ -359,7 +449,7 @@ public partial class RequestTabViewModel : ViewModelBase
     public void LoadFromSavedRequest(SavedRequest saved, Guid collectionId, Guid? folderId)
     {
         _syncingUrl = true;
-        _syncingContentType = true;
+        _syncingContentType = true; // suppresses header sync and auto-populate during load
         try
         {
             SavedRequestId = saved.Id;
@@ -387,13 +477,12 @@ public partial class RequestTabViewModel : ViewModelBase
             foreach (var p in saved.Request.FormParts)
                 FormParts.Add(new FormPartViewModel(p => FormParts.Remove(p)) { Key = p.Key, Value = p.Value, PartContentType = p.ContentType, IsEnabled = p.IsEnabled });
 
-            // Resolve content type: prefer explicit header, fall back to saved BodyContentType
+            // Resolve content type: prefer explicit Content-Type header, fall back to saved field
             var ctHeader = saved.Request.Headers.FirstOrDefault(h =>
                 string.Equals(h.Key, "Content-Type", StringComparison.OrdinalIgnoreCase));
             var resolvedCT = ctHeader?.Value ?? saved.Request.BodyContentType;
-            if (!string.IsNullOrEmpty(resolvedCT) && !BodyContentTypes.Contains(resolvedCT))
-                BodyContentTypes.Add(resolvedCT);
-            SelectedBodyContentType = resolvedCT;
+            SetCustomBodyContentType(string.IsNullOrEmpty(resolvedCT) ? null : resolvedCT);
+            SelectedBodyContentType = string.IsNullOrEmpty(resolvedCT) ? "application/json" : resolvedCT;
 
             IsDirty = false;
         }
@@ -403,7 +492,6 @@ public partial class RequestTabViewModel : ViewModelBase
             _syncingContentType = false;
         }
 
-        // Rebuild URL from enabled params (saved URL may be base-only)
         SyncUrlFromParams();
     }
 
@@ -435,11 +523,7 @@ public partial class RequestTabViewModel : ViewModelBase
             foreach (var p in src.FormParts)
                 FormParts.Add(new FormPartViewModel(p => FormParts.Remove(p)) { Key = p.Key, Value = p.Value, PartContentType = p.PartContentType, IsEnabled = p.IsEnabled });
 
-            // Copy custom content types
-            foreach (var ct in src.BodyContentTypes)
-                if (!BodyContentTypes.Contains(ct))
-                    BodyContentTypes.Add(ct);
-
+            SetCustomBodyContentType(src._customBodyContentType);
             SelectedBodyContentType = src.SelectedBodyContentType;
         }
         finally
@@ -469,7 +553,7 @@ public partial class RequestTabViewModel : ViewModelBase
             .Where(h => h.IsEnabled && !string.IsNullOrWhiteSpace(h.Key))
             .Select(h => new HeaderItem { Key = h.Key, Value = h.Value, IsEnabled = h.IsEnabled })
             .ToList(),
-        QueryParams = [], // params already embedded in Url
+        QueryParams = [],
         FormParams = FormParams
             .Where(p => p.IsEnabled && !string.IsNullOrWhiteSpace(p.Key))
             .Select(p => new HeaderItem { Key = p.Key, Value = p.Value, IsEnabled = p.IsEnabled })
@@ -554,10 +638,7 @@ public partial class RequestTabViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void CancelRequest()
-    {
-        _cts?.Cancel();
-    }
+    private void CancelRequest() => _cts?.Cancel();
 
     [RelayCommand]
     private void AddHeader() => Headers.Add(new HeaderItemViewModel(h => Headers.Remove(h)));
@@ -570,6 +651,24 @@ public partial class RequestTabViewModel : ViewModelBase
 
     [RelayCommand]
     private void AddFormPart() => FormParts.Add(new FormPartViewModel(p => FormParts.Remove(p)));
+
+    // User confirmed: clear the raw body so the form view takes over
+    [RelayCommand]
+    private void ConfirmBodyClear()
+    {
+        IsBodyClearConfirmDialogOpen = false;
+        BodyContent = string.Empty;
+    }
+
+    // User cancelled: revert SelectedBodyContentType to what it was before
+    [RelayCommand]
+    private void CancelBodyClear()
+    {
+        IsBodyClearConfirmDialogOpen = false;
+        _revertingBodyType = true;
+        try { SelectedBodyContentType = _previousBodyContentType; }
+        finally { _revertingBodyType = false; }
+    }
 
     [RelayCommand]
     private void Close() => _closeAction(this);

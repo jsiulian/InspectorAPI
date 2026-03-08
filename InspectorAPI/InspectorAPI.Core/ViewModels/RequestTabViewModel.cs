@@ -25,6 +25,9 @@ public partial class RequestTabViewModel : ViewModelBase
     // True while reverting SelectedBodyContentType after user cancels the body-clear dialog
     private bool _revertingBodyType;
 
+    // True while rebuilding raw from fields, or while parsing raw into fields — prevents loops
+    private bool _syncingRaw;
+
     // The content type to revert to if user cancels the body-clear dialog
     private string _previousBodyContentType = "application/json";
 
@@ -78,18 +81,22 @@ public partial class RequestTabViewModel : ViewModelBase
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(TabTitle))]
-    [NotifyPropertyChangedFor(nameof(RequestRaw))]
     private string _url = string.Empty;
+
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(TabTitle))]
-    [NotifyPropertyChangedFor(nameof(RequestRaw))]
     private string _selectedMethod = "GET";
+
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(RequestRaw))]
     [NotifyPropertyChangedFor(nameof(IsRawBody))]
     private string _bodyContent = string.Empty;
+
     [ObservableProperty]
     private string _selectedBodyContentType = "application/json";
+
+    // The editable raw HTTP request text — kept in sync with all other fields
+    [ObservableProperty]
+    private string _requestRaw = string.Empty;
 
     // State
     [ObservableProperty] private bool _isSending;
@@ -126,7 +133,6 @@ public partial class RequestTabViewModel : ViewModelBase
     public bool IsFormUrlEncodedBody => SelectedBodyContentType == "application/x-www-form-urlencoded";
     public bool IsMultipartBody => SelectedBodyContentType == "multipart/form-data";
     // Falls back to raw when a form type is active but its collection is empty and BodyContent has text
-    // (handles old saved requests that stored everything as raw body text)
     public bool IsRawBody =>
         (!IsFormUrlEncodedBody && !IsMultipartBody) ||
         (IsFormUrlEncodedBody && FormParams.Count == 0 && !string.IsNullOrWhiteSpace(BodyContent)) ||
@@ -162,10 +168,10 @@ public partial class RequestTabViewModel : ViewModelBase
             if (e.NewItems != null)
                 foreach (HeaderItemViewModel h in e.NewItems)
                 {
-                    h.PropertyChanged += (_, _) => OnPropertyChanged(nameof(RequestRaw));
+                    h.PropertyChanged += (_, _) => RebuildRaw();
                     h.PropertyChanged += (_, _) => SyncBodyContentTypeFromHeader();
                 }
-            OnPropertyChanged(nameof(RequestRaw));
+            RebuildRaw();
             SyncBodyContentTypeFromHeader();
         };
         QueryParams.CollectionChanged += (_, e) =>
@@ -173,27 +179,27 @@ public partial class RequestTabViewModel : ViewModelBase
             if (e.NewItems != null)
                 foreach (HeaderItemViewModel p in e.NewItems)
                 {
-                    p.PropertyChanged += (_, _) => OnPropertyChanged(nameof(RequestRaw));
+                    p.PropertyChanged += (_, _) => RebuildRaw();
                     p.PropertyChanged += (_, _) => SyncUrlFromParams();
                 }
-            OnPropertyChanged(nameof(RequestRaw));
+            RebuildRaw();
             SyncUrlFromParams();
         };
         FormParams.CollectionChanged += (_, e) =>
         {
             if (e.NewItems != null)
                 foreach (HeaderItemViewModel p in e.NewItems)
-                    p.PropertyChanged += (_, _) => OnPropertyChanged(nameof(RequestRaw));
-            OnPropertyChanged(nameof(RequestRaw));
-            OnPropertyChanged(nameof(IsRawBody)); // IsRawBody depends on FormParams.Count
+                    p.PropertyChanged += (_, _) => RebuildRaw();
+            RebuildRaw();
+            OnPropertyChanged(nameof(IsRawBody));
         };
         FormParts.CollectionChanged += (_, e) =>
         {
             if (e.NewItems != null)
                 foreach (FormPartViewModel p in e.NewItems)
-                    p.PropertyChanged += (_, _) => OnPropertyChanged(nameof(RequestRaw));
-            OnPropertyChanged(nameof(RequestRaw));
-            OnPropertyChanged(nameof(IsRawBody)); // IsRawBody depends on FormParts.Count
+                    p.PropertyChanged += (_, _) => RebuildRaw();
+            RebuildRaw();
+            OnPropertyChanged(nameof(IsRawBody));
         };
 
         // Default headers for new tabs
@@ -201,7 +207,186 @@ public partial class RequestTabViewModel : ViewModelBase
         Headers.Add(new HeaderItemViewModel(h => Headers.Remove(h)) { Key = "User-Agent", Value = "InspectorAPI" });
     }
 
-    // Called just before the property changes — saves current value so CancelBodyClear can revert.
+    // -------------------------------------------------------------------------
+    // Raw ↔ fields sync
+    // -------------------------------------------------------------------------
+
+    // User edited the Raw text area — parse and push into all other fields.
+    partial void OnRequestRawChanged(string value)
+    {
+        if (_syncingRaw) return;
+        _syncingRaw = true;
+        try { ParseAndApplyRaw(value); }
+        finally { _syncingRaw = false; }
+    }
+
+    // Any field changed — recompute and push into RequestRaw.
+    private void RebuildRaw()
+    {
+        if (_syncingRaw) return;
+        _syncingRaw = true;
+        try { RequestRaw = ComputeRaw(); }
+        finally { _syncingRaw = false; }
+    }
+
+    // Parses a raw HTTP request string and updates all fields accordingly.
+    // Silently ignores malformed input so partial edits don't destroy state.
+    private void ParseAndApplyRaw(string raw)
+    {
+        if (string.IsNullOrEmpty(raw)) return;
+
+        var lines = raw.Replace("\r\n", "\n").Split('\n');
+        int i = 0;
+
+        // --- Request line: METHOD path HTTP/version ---
+        if (i >= lines.Length) return;
+        var requestParts = lines[i].Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (requestParts.Length < 1 || !HttpMethods.Contains(requestParts[0]))
+            return; // not a recognisable HTTP request yet — leave everything as-is
+
+        var newMethod = requestParts[0];
+        var pathAndQuery = requestParts.Length >= 2 ? requestParts[1] : null;
+        i++;
+
+        // --- Headers ---
+        string? hostValue = null;
+        var parsedHeaders = new List<(string Key, string Value)>();
+
+        while (i < lines.Length && !string.IsNullOrWhiteSpace(lines[i]))
+        {
+            var colonIdx = lines[i].IndexOf(':');
+            if (colonIdx > 0)
+            {
+                var key = lines[i][..colonIdx].Trim();
+                var value = lines[i][(colonIdx + 1)..].Trim();
+                if (string.Equals(key, "Host", StringComparison.OrdinalIgnoreCase))
+                    hostValue = value;
+                else
+                    parsedHeaders.Add((key, value));
+            }
+            i++;
+        }
+        i++; // skip blank separator line
+
+        // --- Body (everything after the blank line) ---
+        var bodyText = i < lines.Length
+            ? string.Join("\n", lines[i..]).TrimEnd('\r', '\n')
+            : string.Empty;
+
+        // === Apply ===
+
+        SelectedMethod = newMethod;
+
+        // Reconstruct URL: preserve existing scheme, replace host and path
+        if (pathAndQuery != null)
+        {
+            var scheme = Uri.TryCreate(Url, UriKind.Absolute, out var existing) ? existing.Scheme : "https";
+            if (hostValue != null)
+                Url = $"{scheme}://{hostValue}{pathAndQuery}";
+            else if (existing != null)
+                Url = $"{scheme}://{existing.Authority}{pathAndQuery}";
+        }
+
+        // Replace headers entirely with what is in the raw text
+        Headers.Clear();
+        foreach (var (key, value) in parsedHeaders)
+            Headers.Add(new HeaderItemViewModel(h => Headers.Remove(h)) { Key = key, Value = value, IsEnabled = true });
+        // (SyncBodyContentTypeFromHeader is called by the CollectionChanged handler above)
+
+        // Apply body — respect the current content type after headers have been applied
+        var multipartPlaceholder = "-- multipart/form-data";
+        if (IsFormUrlEncodedBody && !string.IsNullOrWhiteSpace(bodyText))
+        {
+            if (TryParseUrlEncoded(bodyText, out var formPairs))
+            {
+                FormParams.Clear();
+                foreach (var (k, v) in formPairs)
+                    FormParams.Add(new HeaderItemViewModel(p => FormParams.Remove(p)) { Key = k, Value = v });
+                BodyContent = string.Empty;
+            }
+            else
+            {
+                BodyContent = bodyText;
+            }
+        }
+        else if (!IsMultipartBody || !bodyText.StartsWith(multipartPlaceholder))
+        {
+            BodyContent = bodyText;
+        }
+    }
+
+    // Computes the canonical raw HTTP representation from all current fields.
+    private string ComputeRaw()
+    {
+        var sb = new System.Text.StringBuilder();
+
+        if (Uri.TryCreate(Url, UriKind.Absolute, out var parsedUri))
+        {
+            var requestTarget = parsedUri.PathAndQuery;
+            if (string.IsNullOrEmpty(requestTarget)) requestTarget = "/";
+            sb.AppendLine($"{SelectedMethod} {requestTarget} HTTP/1.1");
+            sb.AppendLine($"Host: {parsedUri.Host}{(parsedUri.IsDefaultPort ? "" : ":" + parsedUri.Port)}");
+        }
+        else
+        {
+            sb.AppendLine($"{SelectedMethod} {Url} HTTP/1.1");
+        }
+
+        // Only emit Content-Type inline when it is not already in the headers list
+        var hasCTHeader = Headers.Any(h => h.IsEnabled &&
+            string.Equals(h.Key, "Content-Type", StringComparison.OrdinalIgnoreCase));
+        var hasBody = IsFormUrlEncodedBody
+            ? FormParams.Any(p => p.IsEnabled && !string.IsNullOrWhiteSpace(p.Key))
+            : IsMultipartBody
+                ? FormParts.Any(p => p.IsEnabled && !string.IsNullOrWhiteSpace(p.Key))
+                : !string.IsNullOrWhiteSpace(BodyContent);
+        if (!hasCTHeader && hasBody)
+            sb.AppendLine($"Content-Type: {SelectedBodyContentType}");
+
+        foreach (var h in Headers.Where(h => h.IsEnabled && !string.IsNullOrWhiteSpace(h.Key)))
+            sb.AppendLine($"{h.Key}: {h.Value}");
+
+        sb.AppendLine();
+
+        if (IsFormUrlEncodedBody)
+        {
+            sb.Append(string.Join("&", FormParams
+                .Where(p => p.IsEnabled && !string.IsNullOrWhiteSpace(p.Key))
+                .Select(p => Uri.EscapeDataString(p.Key) + "=" + Uri.EscapeDataString(p.Value ?? ""))));
+        }
+        else if (IsMultipartBody)
+        {
+            sb.Append("-- multipart/form-data (see Form Parts) --");
+        }
+        else if (!string.IsNullOrWhiteSpace(BodyContent))
+        {
+            sb.Append(BodyContent);
+        }
+
+        return sb.ToString();
+    }
+
+    // -------------------------------------------------------------------------
+    // Field change handlers that trigger RebuildRaw
+    // -------------------------------------------------------------------------
+
+    partial void OnUrlChanged(string value)
+    {
+        if (_syncingUrl) return;
+        _syncingUrl = true;
+        try { SyncParamsFromUrl(value); }
+        finally { _syncingUrl = false; }
+        RebuildRaw();
+    }
+
+    partial void OnSelectedMethodChanged(string value) => RebuildRaw();
+
+    partial void OnBodyContentChanged(string value) => RebuildRaw();
+
+    // -------------------------------------------------------------------------
+    // Body content type sync
+    // -------------------------------------------------------------------------
+
     partial void OnSelectedBodyContentTypeChanging(string value)
     {
         if (!_revertingBodyType)
@@ -210,18 +395,15 @@ public partial class RequestTabViewModel : ViewModelBase
 
     partial void OnSelectedBodyContentTypeChanged(string value)
     {
-        // Capture whether this change originated from the header sync or a load/copy operation.
-        // When true: skip header sync (already done) and skip auto-populate/dialog (not user-initiated).
         bool triggeredExternally = _syncingContentType;
 
         OnPropertyChanged(nameof(IsRawBody));
         OnPropertyChanged(nameof(IsFormUrlEncodedBody));
         OnPropertyChanged(nameof(IsMultipartBody));
-        OnPropertyChanged(nameof(RequestRaw));
+        RebuildRaw();
 
         if (_revertingBodyType) return;
 
-        // Sync Content-Type header when user changed the dropdown
         if (!triggeredExternally)
         {
             _syncingContentType = true;
@@ -229,7 +411,6 @@ public partial class RequestTabViewModel : ViewModelBase
             finally { _syncingContentType = false; }
         }
 
-        // Auto-populate form fields or ask for confirmation — only for user dropdown changes
         if (!triggeredExternally && !string.IsNullOrWhiteSpace(BodyContent))
         {
             if (value == "application/x-www-form-urlencoded")
@@ -253,16 +434,10 @@ public partial class RequestTabViewModel : ViewModelBase
         }
     }
 
-    // Called by the toolkit when Url changes — syncs query params panel from the new URL
-    partial void OnUrlChanged(string value)
-    {
-        if (_syncingUrl) return;
-        _syncingUrl = true;
-        try { SyncParamsFromUrl(value); }
-        finally { _syncingUrl = false; }
-    }
+    // -------------------------------------------------------------------------
+    // URL ↔ QueryParams sync
+    // -------------------------------------------------------------------------
 
-    // Merges the query string in 'url' into the QueryParams collection.
     private void SyncParamsFromUrl(string url)
     {
         var qIdx = url.IndexOf('?');
@@ -299,7 +474,6 @@ public partial class RequestTabViewModel : ViewModelBase
         }
     }
 
-    // Rebuilds the URL query string from the currently enabled QueryParams.
     private void SyncUrlFromParams()
     {
         if (_syncingUrl) return;
@@ -318,8 +492,10 @@ public partial class RequestTabViewModel : ViewModelBase
         finally { _syncingUrl = false; }
     }
 
-    // Finds the enabled Content-Type header and syncs its value into SelectedBodyContentType.
-    // Maintains a single custom slot in BodyContentTypes — replaces old partial value with new one.
+    // -------------------------------------------------------------------------
+    // Content-Type header ↔ body dropdown sync
+    // -------------------------------------------------------------------------
+
     private void SyncBodyContentTypeFromHeader()
     {
         if (_syncingContentType) return;
@@ -340,8 +516,6 @@ public partial class RequestTabViewModel : ViewModelBase
         finally { _syncingContentType = false; }
     }
 
-    // Ensures BodyContentTypes holds the standard list plus at most one custom entry.
-    // Removes any previous custom entry before adding the new one.
     private void SetCustomBodyContentType(string? value)
     {
         if (_customBodyContentType != null && _customBodyContentType != value)
@@ -362,7 +536,6 @@ public partial class RequestTabViewModel : ViewModelBase
         }
     }
 
-    // Finds or creates a Content-Type header and sets its value.
     private void SyncContentTypeHeader(string contentType)
     {
         var existing = Headers.FirstOrDefault(h =>
@@ -374,8 +547,10 @@ public partial class RequestTabViewModel : ViewModelBase
                 { Key = "Content-Type", Value = contentType, IsEnabled = true });
     }
 
-    // Tries to parse a raw body string as URL-encoded key=value pairs.
-    // Returns false if the body looks like JSON/XML or has no = signs.
+    // -------------------------------------------------------------------------
+    // Helpers
+    // -------------------------------------------------------------------------
+
     private static bool TryParseUrlEncoded(string body, out List<(string Key, string Value)> pairs)
     {
         pairs = [];
@@ -400,64 +575,15 @@ public partial class RequestTabViewModel : ViewModelBase
         catch { return false; }
     }
 
-    public string RequestRaw
-    {
-        get
-        {
-            var sb = new System.Text.StringBuilder();
+    // -------------------------------------------------------------------------
+    // Load / copy / save
+    // -------------------------------------------------------------------------
 
-            if (Uri.TryCreate(Url, UriKind.Absolute, out var parsedUri))
-            {
-                var requestTarget = parsedUri.PathAndQuery;
-                if (string.IsNullOrEmpty(requestTarget)) requestTarget = "/";
-                sb.AppendLine($"{SelectedMethod} {requestTarget} HTTP/1.1");
-                sb.AppendLine($"Host: {parsedUri.Host}{(parsedUri.IsDefaultPort ? "" : ":" + parsedUri.Port)}");
-            }
-            else
-            {
-                sb.AppendLine($"{SelectedMethod} {Url} HTTP/1.1");
-            }
-
-            // Only emit Content-Type inline if not already in the headers list
-            var hasCTHeader = Headers.Any(h => h.IsEnabled &&
-                string.Equals(h.Key, "Content-Type", StringComparison.OrdinalIgnoreCase));
-            var hasBody = IsFormUrlEncodedBody
-                ? FormParams.Any(p => p.IsEnabled && !string.IsNullOrWhiteSpace(p.Key))
-                : IsMultipartBody
-                    ? FormParts.Any(p => p.IsEnabled && !string.IsNullOrWhiteSpace(p.Key))
-                    : !string.IsNullOrWhiteSpace(BodyContent);
-            if (!hasCTHeader && hasBody)
-                sb.AppendLine($"Content-Type: {SelectedBodyContentType}");
-
-            foreach (var h in Headers.Where(h => h.IsEnabled && !string.IsNullOrWhiteSpace(h.Key)))
-                sb.AppendLine($"{h.Key}: {h.Value}");
-
-            sb.AppendLine();
-
-            if (IsFormUrlEncodedBody)
-            {
-                sb.Append(string.Join("&", FormParams
-                    .Where(p => p.IsEnabled && !string.IsNullOrWhiteSpace(p.Key))
-                    .Select(p => Uri.EscapeDataString(p.Key) + "=" + Uri.EscapeDataString(p.Value ?? ""))));
-            }
-            else if (IsMultipartBody)
-            {
-                sb.Append("-- multipart/form-data (see Form Parts) --");
-            }
-            else if (!string.IsNullOrWhiteSpace(BodyContent))
-            {
-                sb.Append(BodyContent);
-            }
-
-            return sb.ToString();
-        }
-    }
-
-    // Load from a saved request
     public void LoadFromSavedRequest(SavedRequest saved, Guid collectionId, Guid? folderId)
     {
         _syncingUrl = true;
-        _syncingContentType = true; // suppresses header sync and auto-populate during load
+        _syncingContentType = true;
+        _syncingRaw = true;
         try
         {
             SavedRequestId = saved.Id;
@@ -485,15 +611,12 @@ public partial class RequestTabViewModel : ViewModelBase
             foreach (var p in saved.Request.FormParts)
                 FormParts.Add(new FormPartViewModel(p => FormParts.Remove(p)) { Key = p.Key, Value = p.Value, PartContentType = p.ContentType, IsEnabled = p.IsEnabled });
 
-            // Resolve content type: prefer explicit Content-Type header, fall back to saved field
             var ctHeader = saved.Request.Headers.FirstOrDefault(h =>
                 string.Equals(h.Key, "Content-Type", StringComparison.OrdinalIgnoreCase));
             var resolvedCT = ctHeader?.Value ?? saved.Request.BodyContentType;
             SetCustomBodyContentType(string.IsNullOrEmpty(resolvedCT) ? null : resolvedCT);
             SelectedBodyContentType = string.IsNullOrEmpty(resolvedCT) ? "application/json" : resolvedCT;
 
-            // Migrate old saves: if url-encoded type is set but body is stored as raw text
-            // (FormParams was not yet a thing when the request was saved), parse it now.
             if (SelectedBodyContentType == "application/x-www-form-urlencoded"
                 && FormParams.Count == 0
                 && !string.IsNullOrWhiteSpace(BodyContent)
@@ -510,16 +633,18 @@ public partial class RequestTabViewModel : ViewModelBase
         {
             _syncingUrl = false;
             _syncingContentType = false;
+            _syncingRaw = false;
         }
 
         SyncUrlFromParams();
+        RebuildRaw();
     }
 
-    // Copies all request fields from another tab (used for duplication).
     public void CopyFrom(RequestTabViewModel src)
     {
         _syncingUrl = true;
         _syncingContentType = true;
+        _syncingRaw = true;
         try
         {
             Name = $"Copy of {src.Name}";
@@ -550,10 +675,12 @@ public partial class RequestTabViewModel : ViewModelBase
         {
             _syncingUrl = false;
             _syncingContentType = false;
+            _syncingRaw = false;
         }
+
+        RebuildRaw();
     }
 
-    // Records that this tab's content has been persisted (prevents duplicate saves).
     public void MarkAsSaved(Guid requestId, Guid collectionId, Guid? folderId)
     {
         SavedRequestId = requestId;
@@ -562,7 +689,6 @@ public partial class RequestTabViewModel : ViewModelBase
         OnPropertyChanged(nameof(TabTitle));
     }
 
-    // For sending HTTP requests — URL already contains enabled query params.
     public HttpRequestModel ToRequestModel() => new()
     {
         Url = Url,
@@ -584,7 +710,6 @@ public partial class RequestTabViewModel : ViewModelBase
             .ToList()
     };
 
-    // For saving to disk — stores base URL + all params (including disabled) separately.
     public HttpRequestModel ToSaveModel()
     {
         var qIdx = Url.IndexOf('?');
@@ -609,6 +734,10 @@ public partial class RequestTabViewModel : ViewModelBase
                 .ToList()
         };
     }
+
+    // -------------------------------------------------------------------------
+    // Commands
+    // -------------------------------------------------------------------------
 
     [RelayCommand]
     private async Task SendRequest()
@@ -651,28 +780,15 @@ public partial class RequestTabViewModel : ViewModelBase
             HasResponse = true;
         }
         catch (OperationCanceledException) { /* user cancelled */ }
-        finally
-        {
-            IsSending = false;
-        }
+        finally { IsSending = false; }
     }
 
-    [RelayCommand]
-    private void CancelRequest() => _cts?.Cancel();
+    [RelayCommand] private void CancelRequest() => _cts?.Cancel();
+    [RelayCommand] private void AddHeader() => Headers.Add(new HeaderItemViewModel(h => Headers.Remove(h)));
+    [RelayCommand] private void AddQueryParam() => QueryParams.Add(new HeaderItemViewModel(p => QueryParams.Remove(p)));
+    [RelayCommand] private void AddFormParam() => FormParams.Add(new HeaderItemViewModel(p => FormParams.Remove(p)));
+    [RelayCommand] private void AddFormPart() => FormParts.Add(new FormPartViewModel(p => FormParts.Remove(p)));
 
-    [RelayCommand]
-    private void AddHeader() => Headers.Add(new HeaderItemViewModel(h => Headers.Remove(h)));
-
-    [RelayCommand]
-    private void AddQueryParam() => QueryParams.Add(new HeaderItemViewModel(p => QueryParams.Remove(p)));
-
-    [RelayCommand]
-    private void AddFormParam() => FormParams.Add(new HeaderItemViewModel(p => FormParams.Remove(p)));
-
-    [RelayCommand]
-    private void AddFormPart() => FormParts.Add(new FormPartViewModel(p => FormParts.Remove(p)));
-
-    // User confirmed: clear the raw body so the form view takes over
     [RelayCommand]
     private void ConfirmBodyClear()
     {
@@ -680,7 +796,6 @@ public partial class RequestTabViewModel : ViewModelBase
         BodyContent = string.Empty;
     }
 
-    // User cancelled: revert SelectedBodyContentType to what it was before
     [RelayCommand]
     private void CancelBodyClear()
     {
@@ -690,17 +805,14 @@ public partial class RequestTabViewModel : ViewModelBase
         finally { _revertingBodyType = false; }
     }
 
-    [RelayCommand]
-    private void Close() => _closeAction(this);
+    [RelayCommand] private void Close() => _closeAction(this);
+    [RelayCommand] private void Activate() => _activateAction?.Invoke(this);
+    [RelayCommand] private void OpenSaveDialog() => _saveDialogAction?.Invoke(this);
+    [RelayCommand] private void Duplicate() => _duplicateAction?.Invoke(this);
 
-    [RelayCommand]
-    private void Activate() => _activateAction?.Invoke(this);
-
-    [RelayCommand]
-    private void OpenSaveDialog() => _saveDialogAction?.Invoke(this);
-
-    [RelayCommand]
-    private void Duplicate() => _duplicateAction?.Invoke(this);
+    // -------------------------------------------------------------------------
+    // Private helpers
+    // -------------------------------------------------------------------------
 
     private string BuildRawView(InspectorAPI.Core.Models.HttpResponseModel response)
     {
@@ -728,9 +840,6 @@ public partial class RequestTabViewModel : ViewModelBase
             var doc = JsonDocument.Parse(text);
             return JsonSerializer.Serialize(doc, new JsonSerializerOptions { WriteIndented = true });
         }
-        catch
-        {
-            return text;
-        }
+        catch { return text; }
     }
 }

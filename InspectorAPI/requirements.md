@@ -129,3 +129,24 @@ The repository must contain a `README.md` covering:
 - Build instructions from the command line (restore, run, publish) with runtime-identifier examples
 - Project structure
 - Data storage paths per operating system
+
+---
+
+## 10. Raw Request Editor
+
+### 10.1 Editable Raw View
+The Raw tab in the request panel must be a fully editable text area. Editing it must instantly update all other request fields (method, URL, headers, query params, body).
+
+### 10.2 Bidirectional Sync
+Changes in any other field (URL bar, Headers tab, Query Params, Body tab, method selector) must instantly update the raw text. Changes made directly in the raw text must propagate back to those fields.
+
+### 10.3 No Circular Updates
+Sync in either direction must not cause infinite update loops. A `_syncingRaw` guard ensures that rebuilding the raw text from fields does not re-trigger field parsing, and vice versa.
+
+### 10.4 Parsing Rules
+When the raw text is edited:
+- The first line is parsed as `METHOD path HTTP/version`. If the method is not a recognised HTTP verb, no changes are applied (protects against partially typed input).
+- The `Host:` line is used together with the current URL scheme to reconstruct the full URL.
+- All other headers replace the Headers tab contents.
+- The body (text after the blank separator line) is applied as raw body text, or parsed into form params if the content type is `application/x-www-form-urlencoded`.
+- If the content type is `multipart/form-data` and the body is the placeholder string, the Form Parts list is left untouched.

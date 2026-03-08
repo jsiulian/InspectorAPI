@@ -654,10 +654,9 @@
                   </Border>
                 </TabItem>
 
-                <!-- Raw request preview (read-only) -->
+                <!-- Editable raw HTTP request -->
                 <TabItem Header="Raw">
                   <TextBox Text="{Binding RequestRaw}"
-                           IsReadOnly="True"
                            AcceptsReturn="True"
                            TextWrapping="NoWrap"
                            FontFamily="Consolas,Courier New,monospace"

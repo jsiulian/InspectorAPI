@@ -8,4 +8,6 @@ public class HttpRequestModel
     public List<HeaderItem> QueryParams { get; set; } = [];
     public string Body { get; set; } = string.Empty;
     public string BodyContentType { get; set; } = "application/json";
+    public List<HeaderItem> FormParams { get; set; } = [];
+    public List<FormPart> FormParts { get; set; } = [];
 }

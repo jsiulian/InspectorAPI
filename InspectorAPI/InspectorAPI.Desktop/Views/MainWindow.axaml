@@ -517,6 +517,8 @@
                 <!-- Body tab -->
                 <TabItem Header="Body">
                   <Grid RowDefinitions="Auto,*" Background="{DynamicResource AppBg}">
+
+                    <!-- Content-Type selector -->
                     <Border Grid.Row="0"
                             Padding="8,6"
                             BorderThickness="0,0,0,1"
@@ -526,14 +528,104 @@
                                    Foreground="{DynamicResource TextMuted}"
                                    FontSize="12"
                                    VerticalAlignment="Center" />
-                        <ComboBox ItemsSource="{x:Static vm:RequestTabViewModel.ContentTypes}"
+                        <ComboBox ItemsSource="{Binding BodyContentTypes}"
                                   SelectedItem="{Binding SelectedBodyContentType}"
                                   FontSize="12"
                                   Padding="8,4" />
                       </StackPanel>
                     </Border>
+
+                    <!-- Form URL-encoded: key-value list -->
+                    <Grid Grid.Row="1" RowDefinitions="*,Auto"
+                          Background="{DynamicResource AppBg}"
+                          IsVisible="{Binding IsFormUrlEncodedBody}">
+                      <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding FormParams}" Margin="8,4">
+                          <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:HeaderItemViewModel">
+                              <Grid ColumnDefinitions="Auto,*,*,Auto" Margin="0,2">
+                                <CheckBox Grid.Column="0"
+                                          IsChecked="{Binding IsEnabled}"
+                                          VerticalAlignment="Center"
+                                          Margin="0,0,6,0" />
+                                <TextBox Grid.Column="1"
+                                         Text="{Binding Key}"
+                                         Watermark="Name"
+                                         FontFamily="Consolas,monospace"
+                                         FontSize="12"
+                                         Padding="6,4"
+                                         Margin="0,0,4,0" />
+                                <TextBox Grid.Column="2"
+                                         Text="{Binding Value}"
+                                         Watermark="Value"
+                                         FontFamily="Consolas,monospace"
+                                         FontSize="12"
+                                         Padding="6,4" />
+                                <Button Grid.Column="3"
+                                        Classes="remove-row-btn"
+                                        Command="{Binding RemoveCommand}"
+                                        Margin="4,0,0,0">×</Button>
+                              </Grid>
+                            </DataTemplate>
+                          </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                      </ScrollViewer>
+                      <Button Grid.Row="1"
+                              Classes="add-row-btn"
+                              Command="{Binding AddFormParamCommand}">+ Add Parameter</Button>
+                    </Grid>
+
+                    <!-- Multipart form-data: key-value-contenttype list -->
+                    <Grid Grid.Row="1" RowDefinitions="*,Auto"
+                          Background="{DynamicResource AppBg}"
+                          IsVisible="{Binding IsMultipartBody}">
+                      <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding FormParts}" Margin="8,4">
+                          <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:FormPartViewModel">
+                              <Grid ColumnDefinitions="Auto,*,*,*,Auto" Margin="0,2">
+                                <CheckBox Grid.Column="0"
+                                          IsChecked="{Binding IsEnabled}"
+                                          VerticalAlignment="Center"
+                                          Margin="0,0,6,0" />
+                                <TextBox Grid.Column="1"
+                                         Text="{Binding Key}"
+                                         Watermark="Name"
+                                         FontFamily="Consolas,monospace"
+                                         FontSize="12"
+                                         Padding="6,4"
+                                         Margin="0,0,4,0" />
+                                <TextBox Grid.Column="2"
+                                         Text="{Binding Value}"
+                                         Watermark="Value"
+                                         FontFamily="Consolas,monospace"
+                                         FontSize="12"
+                                         Padding="6,4"
+                                         Margin="0,0,4,0" />
+                                <TextBox Grid.Column="3"
+                                         Text="{Binding PartContentType}"
+                                         Watermark="Part Content-Type (optional)"
+                                         FontFamily="Consolas,monospace"
+                                         FontSize="12"
+                                         Padding="6,4" />
+                                <Button Grid.Column="4"
+                                        Classes="remove-row-btn"
+                                        Command="{Binding RemoveCommand}"
+                                        Margin="4,0,0,0">×</Button>
+                              </Grid>
+                            </DataTemplate>
+                          </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                      </ScrollViewer>
+                      <Button Grid.Row="1"
+                              Classes="add-row-btn"
+                              Command="{Binding AddFormPartCommand}">+ Add Part</Button>
+                    </Grid>
+
+                    <!-- Raw body: free-text area -->
                     <TextBox Grid.Row="1"
                              Text="{Binding BodyContent}"
+                             IsVisible="{Binding IsRawBody}"
                              AcceptsReturn="True"
                              TextWrapping="NoWrap"
                              FontFamily="Consolas,Courier New,monospace"
@@ -542,6 +634,7 @@
                              Background="{DynamicResource AppBg}"
                              BorderThickness="0"
                              Watermark="Request body (JSON, XML, text…)" />
+
                   </Grid>
                 </TabItem>
 

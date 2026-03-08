@@ -39,11 +39,31 @@ public class HttpRequestService : IHttpRequestService
             }
 
             // Add body for methods that support it
-            if (!string.IsNullOrEmpty(request.Body) && request.Method is not "GET" and not "HEAD" and not "DELETE")
+            if (request.Method is not "GET" and not "HEAD" and not "DELETE")
             {
-                var content = new StringContent(request.Body, Encoding.UTF8);
-                content.Headers.ContentType = MediaTypeHeaderValue.Parse(request.BodyContentType);
-                httpRequest.Content = content;
+                if (request.BodyContentType == "application/x-www-form-urlencoded" && request.FormParams.Count > 0)
+                {
+                    httpRequest.Content = new FormUrlEncodedContent(
+                        request.FormParams.Select(p => new KeyValuePair<string, string>(p.Key, p.Value)));
+                }
+                else if (request.BodyContentType == "multipart/form-data" && request.FormParts.Count > 0)
+                {
+                    var multipart = new MultipartFormDataContent();
+                    foreach (var part in request.FormParts)
+                    {
+                        var partContent = new StringContent(part.Value);
+                        if (!string.IsNullOrWhiteSpace(part.ContentType))
+                            partContent.Headers.ContentType = MediaTypeHeaderValue.Parse(part.ContentType);
+                        multipart.Add(partContent, part.Key);
+                    }
+                    httpRequest.Content = multipart;
+                }
+                else if (!string.IsNullOrEmpty(request.Body))
+                {
+                    var content = new StringContent(request.Body, Encoding.UTF8);
+                    content.Headers.ContentType = MediaTypeHeaderValue.Parse(request.BodyContentType);
+                    httpRequest.Content = content;
+                }
             }
 
             // Capture all headers that will actually be sent (including implicit ones)

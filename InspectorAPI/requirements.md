@@ -1,5 +1,16 @@
 # InspectorAPI — Requirements
 
+## About
+
+InspectorAPI is a cross-platform desktop HTTP client built with .NET 10 and Avalonia UI. It lets developers compose and send HTTP requests, inspect responses, and organise requests into collections — similar in purpose to tools like Postman or Insomnia, but as a lightweight native desktop application.
+
+Key capabilities:
+- Compose requests with any HTTP method, URL, headers, query parameters, and body (raw text, form URL-encoded, or multipart form-data)
+- Inspect responses: status, timing, size, formatted body, and response headers
+- Organise requests into named collections and folders, with save, rename, duplicate, and delete support
+- Import and export collections in native JSON format or Postman v2.1 format
+- Persistent storage of collections on disk per OS conventions
+
 > Living document. Updated as new requests are made.
 
 ---

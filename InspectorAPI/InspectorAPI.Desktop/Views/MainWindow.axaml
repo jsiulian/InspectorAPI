@@ -32,6 +32,12 @@
       <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
       <Setter Property="CornerRadius" Value="0" />
     </Style>
+
+    <!-- TreeViewItem drag visual -->
+    <Style Selector="TreeViewItem.dragging">
+      <Setter Property="Opacity" Value="0.5" />
+    </Style>
+
     <Style Selector="Button.tab-btn.active">
       <!-- SidebarBg matches the request-bar Border background exactly -->
       <Setter Property="Background" Value="{DynamicResource SidebarBg}" />
@@ -148,6 +154,7 @@
       <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
       <Setter Property="FontSize" Value="12" />
       <Setter Property="Padding" Value="2" />
+      <Setter Property="AllowDrop" Value="True" />
     </Style>
 
     <!-- Method badge colors via classes -->
@@ -218,13 +225,22 @@
       <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
         <TreeView ItemsSource="{Binding CollectionTree}"
                   Background="Transparent"
-                  KeyDown="OnCollectionTreeKeyDown">
+                  KeyDown="OnCollectionTreeKeyDown"
+                  AllowDrop="True"
+                  DragOver="OnCollectionTreeDragOver"
+                  Drop="OnCollectionTreeDrop">
           <TreeView.ItemTemplate>
             <TreeDataTemplate x:DataType="vm:CollectionTreeNodeViewModel"
                               ItemsSource="{Binding Children}">
               <!-- Transparent background needed so the full row width is hittable for the ContextMenu -->
               <Border Background="Transparent" HorizontalAlignment="Stretch"
-                      DoubleTapped="OnTreeNodeDoubleTapped">
+                      DoubleTapped="OnTreeNodeDoubleTapped"
+                      AllowDrop="True"
+                      DragEnter="OnTreeNodeDragEnter"
+                      DragLeave="OnTreeNodeDragLeave"
+                      DragOver="OnTreeNodeDragOver"
+                      Drop="OnTreeNodeDrop"
+                      Classes="{x:Null}">
 
                 <Border.ContextMenu>
                   <ContextMenu>
@@ -665,134 +681,15 @@
                            AcceptsReturn="True"
                            TextWrapping="NoWrap"
                            FontFamily="Consolas,Courier New,monospace"
-                           FontSize="12"
+                           FontSize="13"
                            Padding="12"
                            Background="{DynamicResource AppBg}"
                            BorderThickness="0"
-                           Foreground="{DynamicResource TextPrimary}" />
+                           Watermark="Paste or edit your raw HTTP request here…"
+                           AcceptsTab="True" />
                 </TabItem>
 
               </TabControl>
-
-              <!-- ===== SPLITTER ===== -->
-              <GridSplitter Grid.Row="2"
-                            Background="{DynamicResource BorderColor}"
-                            ResizeDirection="Rows" />
-
-              <!-- ===== RESPONSE PANEL ===== -->
-              <Grid Grid.Row="3" RowDefinitions="Auto,*" Background="{DynamicResource AppBg}">
-
-                <!-- Response status bar -->
-                <Border Grid.Row="0"
-                        Padding="10,6"
-                        Background="{DynamicResource SidebarBg}"
-                        BorderThickness="0,0,0,1"
-                        BorderBrush="{DynamicResource BorderColor}">
-                  <Grid ColumnDefinitions="*,Auto">
-                    <StackPanel Grid.Column="0"
-                                Orientation="Horizontal"
-                                Spacing="16">
-
-                      <!-- Spinner while sending -->
-                      <TextBlock Text="Sending…"
-                                 Foreground="{DynamicResource TextMuted}"
-                                 FontSize="12"
-                                 VerticalAlignment="Center"
-                                 IsVisible="{Binding IsSending}" />
-
-                      <!-- Status code -->
-                      <TextBlock Text="{Binding ResponseStatus}"
-                                 FontSize="13"
-                                 FontWeight="SemiBold"
-                                 Foreground="{Binding ResponseStatusColor, Converter={x:Static conv:StringToBrushConverter.Instance}}"
-                                 VerticalAlignment="Center"
-                                 IsVisible="{Binding HasResponse}" />
-
-                      <!-- Response time -->
-                      <TextBlock Text="{Binding ResponseTime}"
-                                 FontSize="12"
-                                 Foreground="{DynamicResource TextFaint}"
-                                 VerticalAlignment="Center"
-                                 IsVisible="{Binding HasResponse}" />
-
-                      <!-- Response size -->
-                      <TextBlock Text="{Binding ResponseSize}"
-                                 FontSize="12"
-                                 Foreground="{DynamicResource TextFaint}"
-                                 VerticalAlignment="Center"
-                                 IsVisible="{Binding HasResponse}" />
-                    </StackPanel>
-
-                    <!-- Hint when no response -->
-                    <TextBlock Grid.Column="1"
-                               Text="Hit Send to get a response"
-                               Foreground="{DynamicResource TextVeryFaint}"
-                               FontSize="12"
-                               VerticalAlignment="Center"
-                               IsVisible="{Binding !HasResponse}" />
-                  </Grid>
-                </Border>
-
-                <!-- Response content tabs -->
-                <TabControl Grid.Row="1" Background="{DynamicResource AppBg}">
-
-                  <!-- Response headers -->
-                  <TabItem Header="Headers">
-                    <ScrollViewer Background="{DynamicResource AppBg}">
-                      <ItemsControl ItemsSource="{Binding ResponseHeaders}" Margin="8,4">
-                        <ItemsControl.ItemTemplate>
-                          <DataTemplate x:DataType="vm:HeaderItemViewModel">
-                            <Grid ColumnDefinitions="*,*" Margin="0,2">
-                              <SelectableTextBlock Grid.Column="0"
-                                         Text="{Binding Key}"
-                                         FontWeight="SemiBold"
-                                         FontSize="12"
-                                         Foreground="{DynamicResource TextHeaderKey}"
-                                         FontFamily="Consolas,monospace"
-                                         TextWrapping="Wrap" />
-                              <SelectableTextBlock Grid.Column="1"
-                                         Text="{Binding Value}"
-                                         FontSize="12"
-                                         Foreground="{DynamicResource TextSecondary}"
-                                         TextWrapping="Wrap"
-                                         Margin="8,0,0,0" />
-                            </Grid>
-                          </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                      </ItemsControl>
-                    </ScrollViewer>
-                  </TabItem>
-
-                  <!-- Response body (pretty-printed) -->
-                  <TabItem Header="Body">
-                    <TextBox Text="{Binding ResponseBody}"
-                             IsReadOnly="True"
-                             AcceptsReturn="True"
-                             TextWrapping="NoWrap"
-                             FontFamily="Consolas,Courier New,monospace"
-                             FontSize="12"
-                             Padding="12"
-                             Background="{DynamicResource AppBg}"
-                             BorderThickness="0"
-                             Foreground="{DynamicResource TextPrimary}" />
-                  </TabItem>
-
-                  <!-- Raw (full HTTP exchange: request line + sent headers + response headers + body) -->
-                  <TabItem Header="Raw">
-                    <TextBox Text="{Binding ResponseRawBody}"
-                             IsReadOnly="True"
-                             AcceptsReturn="True"
-                             TextWrapping="NoWrap"
-                             FontFamily="Consolas,Courier New,monospace"
-                             FontSize="12"
-                             Padding="12"
-                             Background="{DynamicResource AppBg}"
-                             BorderThickness="0"
-                             Foreground="{DynamicResource TextPrimary}" />
-                  </TabItem>
-
-                </TabControl>
-              </Grid>
 
             </Grid>
           </DataTemplate>
@@ -801,193 +698,6 @@
 
     </Grid>
 
-    <!-- ===== BODY CLEAR CONFIRMATION DIALOG OVERLAY ===== -->
-    <Border Grid.Column="0" Grid.ColumnSpan="3"
-            IsVisible="{Binding SelectedTab.IsBodyClearConfirmDialogOpen}"
-            Background="#88000011">
-      <Border Width="400"
-              Background="{DynamicResource DialogBg}"
-              BorderBrush="{DynamicResource DialogBorderColor}"
-              BorderThickness="1"
-              CornerRadius="8"
-              Padding="24"
-              HorizontalAlignment="Center"
-              VerticalAlignment="Center">
-        <StackPanel Spacing="16">
-
-          <TextBlock Text="Switch Content Type"
-                     FontSize="16" FontWeight="Bold"
-                     Foreground="{DynamicResource TextPrimary}" />
-
-          <TextBlock FontSize="13" TextWrapping="Wrap"
-                     Foreground="{DynamicResource TextSecondary}">
-            The current body content doesn't match the selected format.
-            Proceeding will clear it.
-          </TextBlock>
-
-          <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
-            <Button Background="{DynamicResource BtnSecondaryBg}"
-                    Foreground="{DynamicResource TextSecondary}"
-                    BorderThickness="0"
-                    Padding="16,8"
-                    CornerRadius="4"
-                    Command="{Binding SelectedTab.CancelBodyClearCommand}">Cancel</Button>
-            <Button Background="#CC2222"
-                    Foreground="White"
-                    BorderThickness="0"
-                    Padding="16,8"
-                    CornerRadius="4"
-                    Command="{Binding SelectedTab.ConfirmBodyClearCommand}">Proceed and Clear Body</Button>
-          </StackPanel>
-
-        </StackPanel>
-      </Border>
-    </Border>
-
-    <!-- ===== NAME DIALOG OVERLAY (new collection / new folder / rename) ===== -->
-    <Border Grid.Column="0" Grid.ColumnSpan="3"
-            IsVisible="{Binding IsNameDialogOpen}"
-            Background="#88000011">
-      <Border Width="360"
-              Background="{DynamicResource DialogBg}"
-              BorderBrush="{DynamicResource DialogBorderColor}"
-              BorderThickness="1"
-              CornerRadius="8"
-              Padding="24"
-              HorizontalAlignment="Center"
-              VerticalAlignment="Center">
-        <StackPanel Spacing="16">
-
-          <TextBlock Text="{Binding NameDialogTitle}"
-                     FontSize="16" FontWeight="Bold"
-                     Foreground="{DynamicResource TextPrimary}" />
-
-          <TextBox x:Name="NameDialogTextBox"
-                   Text="{Binding NameDialogValue}"
-                   Padding="10,8"
-                   FontSize="13" />
-
-          <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
-            <Button Background="{DynamicResource BtnSecondaryBg}"
-                    Foreground="{DynamicResource TextSecondary}"
-                    BorderThickness="0"
-                    Padding="16,8"
-                    CornerRadius="4"
-                    Command="{Binding CancelNameDialogCommand}">Cancel</Button>
-            <Button Classes="send-btn accent"
-                    Command="{Binding ConfirmNameDialogCommand}">OK</Button>
-          </StackPanel>
-
-        </StackPanel>
-      </Border>
-    </Border>
-
-    <!-- ===== SAVE REQUEST DIALOG OVERLAY ===== -->
-    <Border Grid.Column="0" Grid.ColumnSpan="3"
-            IsVisible="{Binding IsSaveDialogOpen}"
-            Background="#88000011">
-      <Border Width="420"
-              Background="{DynamicResource DialogBg}"
-              BorderBrush="{DynamicResource DialogBorderColor}"
-              BorderThickness="1"
-              CornerRadius="8"
-              Padding="24"
-              HorizontalAlignment="Center"
-              VerticalAlignment="Center">
-        <StackPanel Spacing="16">
-
-          <TextBlock Text="Save Request"
-                     FontSize="16"
-                     FontWeight="Bold"
-                     Foreground="{DynamicResource TextPrimary}" />
-
-          <!-- Request name -->
-          <StackPanel Spacing="6">
-            <TextBlock Text="Request Name" FontSize="12" Foreground="{DynamicResource TextMuted}" />
-            <TextBox x:Name="SaveNameTextBox"
-                     Text="{Binding SaveRequestName}"
-                     Padding="10,8"
-                     FontSize="13" />
-          </StackPanel>
-
-          <!-- Collection selection -->
-          <StackPanel Spacing="6">
-            <TextBlock Text="Save to Collection / Folder" FontSize="12" Foreground="{DynamicResource TextMuted}" />
-            <ListBox ItemsSource="{Binding FlatSaveTargets}"
-                     SelectedItem="{Binding SelectedSaveTarget}"
-                     MaxHeight="200"
-                     Background="{DynamicResource SidebarBg}"
-                     BorderBrush="{DynamicResource BorderColor}"
-                     BorderThickness="1">
-              <ListBox.ItemTemplate>
-                <DataTemplate x:DataType="vm:CollectionTreeNodeViewModel">
-                  <TextBlock Text="{Binding FlatTargetDisplayName}"
-                             FontFamily="Consolas,monospace"
-                             Padding="4" />
-                </DataTemplate>
-              </ListBox.ItemTemplate>
-            </ListBox>
-          </StackPanel>
-
-          <!-- Buttons -->
-          <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
-            <Button Background="{DynamicResource BtnSecondaryBg}"
-                    Foreground="{DynamicResource TextSecondary}"
-                    BorderThickness="0"
-                    Padding="16,8"
-                    CornerRadius="4"
-                    Command="{Binding CancelSaveDialogCommand}">Cancel</Button>
-            <Button Classes="send-btn accent"
-                    Command="{Binding SaveRequestCommand}">Save</Button>
-          </StackPanel>
-
-        </StackPanel>
-      </Border>
-    </Border>
-
-    <!-- ===== DELETE CONFIRMATION DIALOG OVERLAY ===== -->
-    <Border Grid.Column="0" Grid.ColumnSpan="3"
-            IsVisible="{Binding IsDeleteDialogOpen}"
-            Background="#88000011">
-      <Border Width="360"
-              Background="{DynamicResource DialogBg}"
-              BorderBrush="{DynamicResource DialogBorderColor}"
-              BorderThickness="1"
-              CornerRadius="8"
-              Padding="24"
-              HorizontalAlignment="Center"
-              VerticalAlignment="Center">
-        <StackPanel Spacing="16">
-
-          <TextBlock Text="Delete"
-                     FontSize="16" FontWeight="Bold"
-                     Foreground="{DynamicResource TextPrimary}" />
-
-          <TextBlock FontSize="13" TextWrapping="Wrap"
-                     Foreground="{DynamicResource TextSecondary}">
-            <Run Text="Are you sure you want to delete '" />
-            <Run Text="{Binding DeleteDialogNodeName}" FontWeight="SemiBold" />
-            <Run Text="'? This cannot be undone." />
-          </TextBlock>
-
-          <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
-            <Button Background="{DynamicResource BtnSecondaryBg}"
-                    Foreground="{DynamicResource TextSecondary}"
-                    BorderThickness="0"
-                    Padding="16,8"
-                    CornerRadius="4"
-                    Command="{Binding CancelDeleteCommand}">Cancel</Button>
-            <Button Background="#CC2222"
-                    Foreground="White"
-                    BorderThickness="0"
-                    Padding="16,8"
-                    CornerRadius="4"
-                    Command="{Binding ConfirmDeleteCommand}">Delete</Button>
-          </StackPanel>
-
-        </StackPanel>
-      </Border>
-    </Border>
-
   </Grid>
+
 </Window>

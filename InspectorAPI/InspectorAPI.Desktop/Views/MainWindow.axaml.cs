@@ -9,6 +9,10 @@ namespace InspectorAPI.Desktop.Views;
 
 public partial class MainWindow : Window
 {
+    private CollectionTreeNodeViewModel? _draggedItem;
+    private CollectionTreeNodeViewModel? _targetItem;
+    private bool _isDragging = false;
+
     public MainWindow()
     {
         InitializeComponent();
@@ -98,5 +102,112 @@ public partial class MainWindow : Window
         if (sender is not TreeView { SelectedItem: CollectionTreeNodeViewModel node }) return;
         if (e.Key == Key.Return && node.IsRequest) { node.OpenCommand.Execute(null); e.Handled = true; }
         else if (e.Key == Key.Delete) { node.DeleteCommand.Execute(null); e.Handled = true; }
+    }
+
+    // Drag and Drop for TreeView and TreeViewItem
+    private void OnCollectionTreeDragOver(object? sender, DragEventArgs e)
+    {
+        if (DataContext is not MainViewModel vm) return;
+
+        if (e.Data.Contains("CollectionTreeNodeViewModel"))
+        {
+            e.Effects = DragDropEffects.Move;
+            e.Handled = true;
+        }
+    }
+
+    private void OnCollectionTreeDrop(object? sender, DragEventArgs e)
+    {
+        if (DataContext is not MainViewModel vm) return;
+
+        if (e.Data.Contains("CollectionTreeNodeViewModel") && _draggedItem != null)
+        {
+            if (_targetItem == null && sender is TreeView)
+            {
+                // Move to root level
+                _draggedItem.Parent?.Children.Remove(_draggedItem);
+                vm.CollectionTree.Add(_draggedItem);
+                _draggedItem.Parent = null;
+            }
+            else if (_targetItem != null && _targetItem.IsCollectionOrFolder)
+            {
+                // Move into target folder
+                _draggedItem.Parent?.Children.Remove(_draggedItem);
+                _targetItem.Children.Add(_draggedItem);
+                _draggedItem.Parent = _targetItem;
+            }
+            else if (_targetItem != null && _targetItem.Parent != null)
+            {
+                // Move after target item in same parent
+                var parent = _targetItem.Parent;
+                int targetIndex = parent.Children.IndexOf(_targetItem);
+                parent.Children.Remove(_draggedItem);
+                parent.Children.Insert(targetIndex + 1, _draggedItem);
+                _draggedItem.Parent = parent;
+            }
+
+            _draggedItem = null;
+            _targetItem = null;
+            _isDragging = false;
+            e.Handled = true;
+        }
+    }
+
+    private void OnTreeNodeDragEnter(object? sender, DragEventArgs e)
+    {
+        if (sender is Border border && border.DataContext is CollectionTreeNodeViewModel targetNode)
+        {
+            _targetItem = targetNode;
+            if (targetNode.IsCollectionOrFolder)
+            {
+                e.Effects = DragDropEffects.Move;
+                e.Handled = true;
+            }
+        }
+    }
+
+    private void OnTreeNodeDragLeave(object? sender, DragEventArgs e)
+    {
+        _targetItem = null;
+        e.Handled = true;
+    }
+
+    private void OnTreeNodeDragOver(object? sender, DragEventArgs e)
+    {
+        if (sender is Border border && border.DataContext is CollectionTreeNodeViewModel targetNode && targetNode.IsCollectionOrFolder)
+        {
+            e.Effects = DragDropEffects.Move;
+            e.Handled = true;
+        }
+    }
+
+    private void OnTreeNodeDrop(object? sender, DragEventArgs e)
+    {
+        if (sender is Border border && border.DataContext is CollectionTreeNodeViewModel targetNode && e.Data.Contains("CollectionTreeNodeViewModel"))
+        {
+            _draggedItem = (CollectionTreeNodeViewModel)e.Data.Get("CollectionTreeNodeViewModel");
+
+            if (_draggedItem != null && _draggedItem != targetNode)
+            {
+                if (targetNode.IsCollectionOrFolder)
+                {
+                    // Move into target folder
+                    _draggedItem.Parent?.Children.Remove(_draggedItem);
+                    targetNode.Children.Add(_draggedItem);
+                    _draggedItem.Parent = targetNode;
+                }
+                else if (targetNode.Parent != null)
+                {
+                    // Move after target item
+                    var parent = targetNode.Parent;
+                    int targetIndex = parent.Children.IndexOf(targetNode);
+                    parent.Children.Remove(_draggedItem);
+                    parent.Children.Insert(targetIndex + 1, _draggedItem);
+                    _draggedItem.Parent = parent;
+                }
+            }
+
+            e.Handled = true;
+        }
     }
 }

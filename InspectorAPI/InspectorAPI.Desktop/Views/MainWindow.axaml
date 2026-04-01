@@ -178,7 +178,7 @@
     </Style>
     <Style Selector="TextBlock.method-OPTIONS">
       <Setter Property="Foreground" Value="#0D5AA7" />
-    </Style
+    </Style>
 
   </Window.Styles>
 
@@ -594,27 +594,59 @@
                       <Button Grid.Row="1"
                               Classes="add-row-btn"
                               Command="{Binding AddFormParamCommand}">+ Add Parameter</Button>
-                    </Grid
+                    </Grid>
 
-                  <!-- Auth tab (placeholder) -->
-                  <TabItem Header="Auth">
-                    <Border Background="{DynamicResource AppBg}" Padding="16">
-                      <StackPanel Spacing="12">
-                        <TextBlock Text="Authentication" FontSize="14" Foreground="{DynamicResource TextPrimary}" />
-                        <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource TextFaint}">
-                          Add Authorization headers manually in the Headers tab.<LineBreak/>
-                          Common patterns:&#10;<LineBreak/>
-                          • Bearer token: Authorization: Bearer &lt;token&gt;&#10;<LineBreak/>
-                          • Basic auth: Authorization: Basic &lt;base64&gt;&#10;<LineBreak/>
-                          • API key: X-Api-Key: &lt;key&gt;
-                        </TextBlock>
-                      </StackPanel>
-                    </Border>
-                  </TabItem>
+                    <!-- Multipart form-data: key-value-contenttype list -->
+                    <Grid Grid.Row="1" RowDefinitions="*,Auto"
+                          Background="{DynamicResource AppBg}"
+                          IsVisible="{Binding IsMultipartBody}">
+                      <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding FormParts}" Margin="8,4">
+                          <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:FormPartViewModel">
+                              <Grid ColumnDefinitions="Auto,*,*,*,Auto" Margin="0,2">
+                                <CheckBox Grid.Column="0"
+                                          IsChecked="{Binding IsEnabled}"
+                                          VerticalAlignment="Center"
+                                          Margin="0,0,6,0" />
+                                <TextBox Grid.Column="1"
+                                         Text="{Binding Key}"
+                                         Watermark="Name"
+                                         FontFamily="Consolas,monospace"
+                                         FontSize="12"
+                                         Padding="6,4"
+                                         Margin="0,0,4,0" />
+                                <TextBox Grid.Column="2"
+                                         Text="{Binding Value}"
+                                         Watermark="Value"
+                                         FontFamily="Consolas,monospace"
+                                         FontSize="12"
+                                         Padding="6,4"
+                                         Margin="0,0,4,0" />
+                                <TextBox Grid.Column="3"
+                                         Text="{Binding PartContentType}"
+                                         Watermark="Part Content-Type (optional)"
+                                         FontFamily="Consolas,monospace"
+                                         FontSize="12"
+                                         Padding="6,4" />
+                                <Button Grid.Column="4"
+                                        Classes="remove-row-btn"
+                                        Command="{Binding RemoveCommand}"
+                                        Margin="4,0,0,0">×</Button>
+                              </Grid>
+                            </DataTemplate>
+                          </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                      </ScrollViewer>
+                      <Button Grid.Row="1"
+                              Classes="add-row-btn"
+                              Command="{Binding AddFormPartCommand}">+ Add Part</Button>
+                    </Grid>
 
-                  <!-- Editable raw HTTP request -->
-                  <TabItem Header="Raw">
-                    <TextBox Text="{Binding RequestRaw}"
+                    <!-- Raw body: free-text area -->
+                    <TextBox Grid.Row="1"
+                             Text="{Binding BodyContent}"
+                             IsVisible="{Binding IsRawBody}"
                              AcceptsReturn="True"
                              TextWrapping="NoWrap"
                              FontFamily="Consolas,Courier New,monospace"
@@ -622,11 +654,42 @@
                              Padding="12"
                              Background="{DynamicResource AppBg}"
                              BorderThickness="0"
-                             Watermark="Paste or edit your raw HTTP request here…"
-                             AcceptsTab="True" />
-                  </TabItem>
+                             Watermark="Request body (JSON, XML, text…)" />
 
-                </TabControl>
+                  </Grid>
+                </TabItem>
+
+                <!-- Auth tab (placeholder) -->
+                <TabItem Header="Auth">
+                  <Border Background="{DynamicResource AppBg}" Padding="16">
+                    <StackPanel Spacing="12">
+                      <TextBlock Text="Authentication" FontSize="14" Foreground="{DynamicResource TextPrimary}" />
+                      <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource TextFaint}">
+                        Add Authorization headers manually in the Headers tab.<LineBreak/>
+                        Common patterns:&#10;<LineBreak/>
+                        • Bearer token: Authorization: Bearer &lt;token&gt;&#10;<LineBreak/>
+                        • Basic auth: Authorization: Basic &lt;base64&gt;&#10;<LineBreak/>
+                        • API key: X-Api-Key: &lt;key&gt;
+                      </TextBlock>
+                    </StackPanel>
+                  </Border>
+                </TabItem>
+
+                <!-- Editable raw HTTP request -->
+                <TabItem Header="Raw">
+                  <TextBox Text="{Binding RequestRaw}"
+                           AcceptsReturn="True"
+                           TextWrapping="NoWrap"
+                           FontFamily="Consolas,Courier New,monospace"
+                           FontSize="13"
+                           Padding="12"
+                           Background="{DynamicResource AppBg}"
+                           BorderThickness="0"
+                           Watermark="Paste or edit your raw HTTP request here…"
+                           AcceptsTab="True" />
+                </TabItem>
+
+              </TabControl>
 
             </Grid>
           </DataTemplate>

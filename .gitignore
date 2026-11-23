@@ -5,3 +5,6 @@ InspectorAPI/*/obj/
 .vs/
 InspectorAPI/.idea/**
 .juggler/**
+dist/
+packaging/icons/*.icns
+packaging/icons/*.iconset/

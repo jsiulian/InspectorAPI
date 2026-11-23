@@ -103,6 +103,39 @@ The output lands in:
 InspectorAPI.Desktop/bin/Release/net10.0/<RID>/publish/
 ```
 
+### macOS DMG installer
+
+A ready-made publish profile builds a self-contained single-file app for macOS
+Apple Silicon and wraps it into a distributable `.dmg` (with an
+`Applications` shortcut and a styled Finder window):
+
+```bash
+dotnet publish InspectorAPI/InspectorAPI.Desktop -p:PublishProfile=osx-arm64-dmg
+# with a version stamped into the bundle and file name:
+dotnet publish InspectorAPI/InspectorAPI.Desktop -p:PublishProfile=osx-arm64-dmg -p:AppVersion=1.2.0
+```
+
+The DMG is written to:
+
+```
+dist/InspectorAPI-<version>-osx-arm64.dmg
+```
+
+Under the hood the profile runs [`scripts/make-dmg.sh`](scripts/make-dmg.sh),
+which stages an `.app` bundle (Info.plist + icon), ad-hoc code-signs it, and
+uses `hdiutil` + AppleScript to produce the DMG. To rebuild just the DMG from
+an existing publish output:
+
+```bash
+scripts/make-dmg.sh InspectorAPI.Desktop/bin/Release/net10.0/osx-arm64/publish InspectorAPI InspectorAPI 1.2.0
+```
+
+The app icon (`packaging/icons/InspectorAPI.icns`) is generated from
+`InspectorAPI.Desktop/Assets/icon.png` via [`scripts/make-icon.sh`](scripts/make-icon.sh);
+it is built automatically if missing. The bundle is ad-hoc signed — for
+distribution outside your own machines, replace `--sign -` in the script
+with your Apple Developer ID certificate.
+
 ---
 
 ## Project structure
@@ -110,6 +143,9 @@ InspectorAPI.Desktop/bin/Release/net10.0/<RID>/publish/
 ```
 InspectorAPI/
 ├── InspectorAPI.sln
+├── scripts/                    # Packaging helpers (make-icon.sh, make-dmg.sh)
+├── packaging/icons/            # Generated .icns for the macOS bundle
+├── dist/                       # Output .dmg files
 ├── InspectorAPI.Core/          # Platform-independent logic
 │   ├── Models/                 # Data models (Collection, SavedRequest, …)
 │   ├── Services/               # HTTP client, collection persistence, Postman converter
@@ -117,6 +153,7 @@ InspectorAPI/
 └── InspectorAPI.Desktop/       # Avalonia desktop application
     ├── Assets/                 # Application icon
     ├── Converters/             # Value converters (method badge colours, …)
+    ├── Properties/PublishProfiles/  # osx-arm64-dmg.pubxml — one-command DMG build
     └── Views/
         ├── MainWindow.axaml    # Single-window UI — layout, styles, theme resources
         └── MainWindow.axaml.cs # Code-behind (file picker, keyboard shortcuts, focus)

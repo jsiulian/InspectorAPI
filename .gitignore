@@ -4,3 +4,4 @@ InspectorAPI/*/obj/
 *.user
 .vs/
 InspectorAPI/.idea/**
+.juggler/**
